@@ -1,0 +1,51 @@
+{
+  "game": "WILWATIKTA 3D",
+  "version": "v21",
+  "competition": "gta6-01",
+  "seed": 19981118,
+  "city": {
+    "buildings": 25,
+    "windows": 672,
+    "litWindows": 295,
+    "trees": 24,
+    "lamps": 10,
+    "props": 25,
+    "meshes": 1059
+  },
+  "districts": [
+    "PELABUHAN SEGARA",
+    "KAMPUNG BATIK",
+    "LORONG EMAS",
+    "PANTAI KIDUL",
+    "ALUN-ALUN",
+    "PASAR SENJA"
+  ],
+  "missions": 12,
+  "crew": [
+    "SUGENG",
+    "AGUS",
+    "WANTO",
+    "BAMBANG",
+    "RATNA",
+    "SLAMET"
+  ],
+  "weapons": [
+    "FIST",
+    "PISTOL",
+    "SMG TAWON",
+    "SHOTGUN",
+    "RIFLE"
+  ],
+  "shots": [
+    "1-chase",
+    "2-title",
+    "3-night",
+    "4-map"
+  ],
+  "size": [
+    1280,
+    720
+  ],
+  "engine": "three.js 0.160.0 (CDN)",
+  "renderer": "WebGL"
+}
