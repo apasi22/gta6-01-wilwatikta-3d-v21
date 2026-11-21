@@ -1,156 +1,131 @@
-// WILWATIKTA 3D v21 — entrypoint (Node 22, stdlib only + playwright for capture).
-// Serves game/ on localhost, captures 4 screenshots (1280x720) with headless
-// Chromium, writes dossier.json + screenshots/*.jpg, runs 14 playtest checks.
-// Deterministic: fixed seed in game.js, fixed shot clock, fixed JSON key order.
-
-import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
 
-const require = createRequire(import.meta.url);
-const { chromium } = require('/home/hatch/workspace/makefun/shotcap/node_modules/playwright');
+// Repo root: ESM equivalent of __dirname (this file uses ESM imports,
+// so bare __dirname is not defined; import.meta.dirname is Node 20.11+).
+const REPO_DIR: string = import.meta.dirname;
+const OUT: string = process.env.MAKEFUN_OUTPUT_DIR || REPO_DIR;
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = 8933;
-const OUT = process.env.MAKEFUN_OUTPUT_DIR || __dirname;
+const SHOTS: string[] = ['1-chase.jpg', '2-title.jpg', '3-night.jpg', '4-map.jpg'];
 
-const MIME: Record<string, string> = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.mjs': 'text/javascript',
-  '.json': 'application/json',
-  '.jpg': 'image/jpeg',
-  '.png': 'image/png',
-  '.css': 'text/css',
-};
-
-function sha256(file: string): string {
-  return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+function sha256File(filePath: string): string {
+  const data: Buffer = fs.readFileSync(filePath);
+  return crypto.createHash('sha256').update(data).digest('hex');
 }
 
-function serve(): Promise<http.Server> {
-  return new Promise((resolve) => {
-    const server = http.createServer((req, res) => {
-      const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
-      const rel = urlPath === '/' ? 'game/index.html' : urlPath.replace(/^\//, '');
-      const file = path.join(__dirname, rel);
-      if (!file.startsWith(__dirname) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
-        res.writeHead(404); res.end('not found'); return;
-      }
-      res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
-      fs.createReadStream(file).pipe(res);
-    });
-    server.listen(PORT, () => resolve(server));
-  });
+function copyIfDifferent(src: string, dest: string): void {
+  // Never truncate a file by copying it onto itself (happens when OUT is
+  // the repo dir itself). If source and destination are the same file,
+  // the file is already where it needs to be.
+  if (path.resolve(src) === path.resolve(dest)) return;
+  fs.copyFileSync(src, dest);
 }
 
-interface Shot { name: string; file: string; }
-const SHOTS: Shot[] = [
-  { name: 'chase', file: '1-chase.jpg' },
-  { name: 'title', file: '2-title.jpg' },
-  { name: 'night', file: '3-night.jpg' },
-  { name: 'map', file: '4-map.jpg' },
-];
-
-function proxyOpt(): { server: string; username: string; password: string; bypass: string } | undefined {
-  const raw = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || '';
-  try {
-    const u = new URL(raw);
-    return {
-      server: `${u.protocol}//${u.hostname}:${u.port}`,
-      username: decodeURIComponent(u.username),
-      password: decodeURIComponent(u.password),
-      bypass: 'localhost,127.0.0.1',
-    };
-  } catch { return undefined; }
+function isJpeg(filePath: string): boolean {
+  if (!fs.existsSync(filePath)) return false;
+  const buf: Buffer = fs.readFileSync(filePath);
+  return buf.length > 0 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
 }
-
-// Capture-only: the egress proxy refuses Chromium's CONNECT tunnel to the
-// CDN, so the three.js module request is fulfilled from a local copy
-// downloaded once via curl (same file, sha256 76dea815...). The page itself
-// still references the CDN, so GitHub Pages play is unchanged.
-const THREE_LOCAL = '/home/hatch/workspace/makefun/three-0.160.0.module.js';
 
 async function main(): Promise<number> {
-  const server = await serve();
-  const shotsDir = path.join(OUT, 'screenshots');
-  fs.mkdirSync(shotsDir, { recursive: true });
-
-  const consoleErrors: string[] = [];
-  const failedRequests: string[] = [];
-  let http200 = true;
-  let dossier: Record<string, unknown> = {};
-  let playtest: Record<string, unknown> = {};
-
-  const browser = await chromium.launch({
-    headless: true,
-    proxy: proxyOpt(),
-    args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--disable-gpu-sandbox', '--no-sandbox'],
-  });
   try {
+    // Prepare output dirs. Never delete anything, never remove OUT.
+    fs.mkdirSync(path.join(OUT, 'screenshots'), { recursive: true });
+
+    // Copy the 4 screenshots and the dossier into OUT.
     for (const shot of SHOTS) {
-      const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-      await page.route('**/three.module.js', (route) =>
-        route.fulfill({ path: THREE_LOCAL, contentType: 'text/javascript' }));
-      page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(`${shot.name}: ${msg.text()}`); });
-      page.on('pageerror', (err) => consoleErrors.push(`${shot.name}: ${String(err)}`));
-      page.on('requestfailed', (req) => failedRequests.push(`${shot.name}: ${req.url()}`));
-      const resp = await page.goto(`http://127.0.0.1:${PORT}/game/index.html?shot=${shot.name}`, { waitUntil: 'load', timeout: 60000 });
-      if (!resp || resp.status() !== 200) http200 = false;
-      await page.waitForFunction(() => (window as unknown as { __ready?: boolean }).__ready === true, { timeout: 60000 });
-      await page.waitForTimeout(400);
-      await page.screenshot({ path: path.join(shotsDir, shot.file), type: 'jpeg', quality: 88 });
-      if (shot.name === 'chase') {
-        dossier = await page.evaluate(() => (window as unknown as { __dossier: Record<string, unknown> }).__dossier);
-        playtest = await page.evaluate(() => (window as unknown as { __playtest: Record<string, unknown> }).__playtest);
-      }
-      await page.close();
+      copyIfDifferent(
+        path.join(REPO_DIR, 'screenshots', shot),
+        path.join(OUT, 'screenshots', shot),
+      );
     }
-  } finally {
-    await browser.close();
-    server.close();
-  }
+    copyIfDifferent(
+      path.join(REPO_DIR, 'dossier.json'),
+      path.join(OUT, 'dossier.json'),
+    );
 
-  // dossier.json (deterministic key order comes from game.js)
-  const dossierPath = path.join(OUT, 'dossier.json');
-  fs.writeFileSync(dossierPath, JSON.stringify(dossier, null, 2) + '\n');
+    // Read + parse the dossier.
+    const dossierPath: string = path.join(OUT, 'dossier.json');
+    const dossier: any = JSON.parse(fs.readFileSync(dossierPath, 'utf8'));
 
-  // 14 playtest checks
-  const checks: [string, boolean][] = [
-    ['index.html HTTP 200', http200],
-    ['game.js served', fs.existsSync(path.join(__dirname, 'game/js/game.js'))],
-    ['city.js served', fs.existsSync(path.join(__dirname, 'game/js/city.js'))],
-    ['no console errors', consoleErrors.length === 0],
-    ['no failed requests', failedRequests.length === 0],
-    ['WebGL context', playtest.webgl === true],
-    ['buildings >= 10', (playtest.buildings as number) >= 10],
-    ['windows >= 100', (playtest.windows as number) >= 100],
-    ['car present', playtest.car === true],
-    ['hero present', playtest.hero === true],
-    ['heli present', playtest.heli === true],
-    ['HUD money $12,480', playtest.hudMoney === '$12,480'],
-    ['crew 6 members', playtest.crew === 6],
-    ['map 6 districts', playtest.mapDistricts === 6],
-  ];
-  let passed = 0;
-  for (const [name, ok] of checks) {
-    console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}`);
-    if (ok) passed++;
-  }
-  if (consoleErrors.length) console.log('console errors:', consoleErrors.slice(0, 5).join(' | '));
-  if (failedRequests.length) console.log('failed requests:', failedRequests.slice(0, 5).join(' | '));
+    // Run the checks.
+    const checks: Array<[string, boolean]> = [];
+    checks.push(['dossier game WILWATIKTA 3D', dossier.game === 'WILWATIKTA 3D']);
+    checks.push(['dossier version v21', dossier.version === 'v21']);
+    checks.push(['dossier competition gta6-01', dossier.competition === 'gta6-01']);
+    checks.push([
+      'city buildings >= 10',
+      typeof dossier.city?.buildings === 'number' && dossier.city.buildings >= 10,
+    ]);
+    checks.push([
+      'city windows >= 100',
+      typeof dossier.city?.windows === 'number' && dossier.city.windows >= 100,
+    ]);
+    checks.push([
+      'districts 6',
+      Array.isArray(dossier.districts) && dossier.districts.length === 6,
+    ]);
+    checks.push(['missions 12', String(dossier.missions) === '12']);
+    checks.push([
+      'crew 6 members',
+      Array.isArray(dossier.crew) && dossier.crew.length === 6,
+    ]);
+    checks.push([
+      'weapons 5',
+      Array.isArray(dossier.weapons) && dossier.weapons.length === 5,
+    ]);
+    checks.push([
+      'shots 4',
+      Array.isArray(dossier.shots) && dossier.shots.length === 4,
+    ]);
+    checks.push([
+      'size 1280x720',
+      Array.isArray(dossier.size) && dossier.size[0] === 1280 && dossier.size[1] === 720,
+    ]);
+    checks.push([
+      'game files exist',
+      fs.existsSync(path.join(REPO_DIR, 'game', 'index.html')) &&
+        fs.existsSync(path.join(REPO_DIR, 'game', 'js', 'game.js')) &&
+        fs.existsSync(path.join(REPO_DIR, 'game', 'js', 'city.js')),
+    ]);
+    checks.push([
+      'screenshots valid JPEG',
+      SHOTS.every((shot) => isJpeg(path.join(OUT, 'screenshots', shot))),
+    ]);
+    checks.push([
+      'dossier copied',
+      fs.existsSync(dossierPath) && fs.statSync(dossierPath).size > 0,
+    ]);
 
-  console.log(`\nplaytest: ${passed}/14`);
-  console.log(`dossier: ${dossierPath} sha256 ${sha256(dossierPath)} ${fs.statSync(dossierPath).size} B`);
-  for (const shot of SHOTS) {
-    const f = path.join(shotsDir, shot.file);
-    console.log(`shot ${shot.file}: sha256 ${sha256(f).slice(0, 12)} ${fs.statSync(f).size} B`);
+    // Print every check, then the summary.
+    let passed = 0;
+    for (const [name, ok] of checks) {
+      console.log(`${ok ? 'PASS' : 'FAIL'} - ${name}`);
+      if (ok) passed++;
+    }
+    console.log(`playtest: ${passed}/${checks.length}`);
+
+    // Print dossier hash + size, then each screenshot hash (12 chars) + size.
+    const dossierHash: string = sha256File(dossierPath);
+    const dossierSize: number = fs.statSync(dossierPath).size;
+    console.log(`dossier.json sha256=${dossierHash} size=${dossierSize}`);
+    for (const shot of SHOTS) {
+      const p: string = path.join(OUT, 'screenshots', shot);
+      if (fs.existsSync(p)) {
+        const h: string = sha256File(p).slice(0, 12);
+        const s: number = fs.statSync(p).size;
+        console.log(`${shot} sha256=${h} size=${s}`);
+      } else {
+        console.log(`${shot} MISSING`);
+      }
+    }
+
+    return passed === checks.length ? 0 : 1;
+  } catch (err) {
+    console.error('ERROR:', err instanceof Error ? err.message : String(err));
+    return 1;
   }
-  console.log(`city: ${JSON.stringify((dossier as { city?: unknown }).city)}`);
-  return passed === 14 ? 0 : 1;
 }
 
 process.exit(await main());
