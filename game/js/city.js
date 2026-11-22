@@ -492,8 +492,8 @@ export function buildCity(THREE, scene, seed) {
     signM.position.set(0, 2.9, 1.02); g.add(signM); stats.meshes++;
     stats.props++;
   }
-  // parked cars (varied colors, cabin + wheels + lights)
-  const carColors = [0x3a6ea8, 0xc8b060, 0x4a7a4a, 0x8a8a92, 0x6a3a5e];
+  // parked cars (R15: vivid bright colors like top 1-5 traffic)
+  const carColors = [0x2a8ae8, 0xf2c230, 0x2fbf4a, 0xe8ecf2, 0xd85a8a, 0xff4d0a];
   const parkSpots = [[-5.2, -16, 0.05], [5.2, -58, -0.03], [-5.2, -96, 0.02], [5.2, -120, 0.0]];
   for (const [x, z, ry] of parkSpots) {
     const g = new THREE.Group(); g.position.set(x, 0.05, z); g.rotation.y = ry; root.add(g); stats.meshes++;
@@ -510,6 +510,29 @@ export function buildCity(THREE, scene, seed) {
     const hl = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 0.06),
       new THREE.MeshLambertMaterial({ color: 0xfff2c0, emissive: 0xffedb0, emissiveIntensity: 0.7 }));
     hl.position.set(0, 0.5, -2.02); g.add(hl); stats.meshes++;
+    stats.props++;
+  }
+  // R15: WPD police car — white body + vivid blue stripe + red/blue light bar (clearly a police car)
+  {
+    const g = new THREE.Group(); g.position.set(5.2, 0.05, -30); g.rotation.y = 0.02; root.add(g); stats.meshes++;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.55, 4.0),
+      new THREE.MeshLambertMaterial({ color: 0xe8ecf2 }));
+    body.position.y = 0.45; g.add(body); stats.meshes++;
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.16, 4.02),
+      new THREE.MeshLambertMaterial({ color: 0x1a4ad8 }));
+    stripe.position.y = 0.55; g.add(stripe); stats.meshes++;
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 2.0), M.glass);
+    cab.position.set(0, 0.95, -0.2); g.add(cab); stats.meshes++;
+    for (const [wx, wz] of [[-0.85, 1.3], [0.85, 1.3], [-0.85, -1.3], [0.85, -1.3]]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.2, 10), M.dark);
+      wheel.rotation.z = Math.PI / 2; wheel.position.set(wx, 0.32, wz); g.add(wheel); stats.meshes++;
+    }
+    const lbR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.3),
+      new THREE.MeshLambertMaterial({ color: 0xe02020, emissive: 0xff2020, emissiveIntensity: 1 }));
+    lbR.position.set(-0.3, 1.28, -0.2); g.add(lbR); stats.meshes++;
+    const lbB = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.3),
+      new THREE.MeshLambertMaterial({ color: 0x2040e0, emissive: 0x2040ff, emissiveIntensity: 1 }));
+    lbB.position.set(0.3, 1.28, -0.2); g.add(lbB); stats.meshes++;
     stats.props++;
   }
   // billboards

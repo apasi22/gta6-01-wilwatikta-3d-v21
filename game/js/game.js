@@ -59,8 +59,8 @@ const cyl = (rt, rb, h, mat, x, y, z, parent, seg) => {
 // ---------- Garuda GT (v17 style, unchanged) ----------
 function buildCar() {
   const g = new THREE.Group();
-  const red = lam(0xe8501a); // R14: vivid bright orange hero car (was dark red) — pops vs blue sky
-  const darkGlass = lam(0x12161f, 0x2a3a55, 0.4);
+  const red = lam(0xff4d0a, 0x881800, 0.35); // R15: vivid red-orange hero paint + warm glow (was flat orange) — pops vs blue sky like top 1-5
+  const darkGlass = lam(0x2a5a8a, 0x5aa8e8, 0.55); // R15: bright daytime blue glass (was near-black)
   box(1.9, 0.55, 4.4, red, 0, 0.55, 0, g);                    // body
   const hood = box(1.85, 0.22, 1.3, red, 0, 0.82, -1.55, g); // sloped hood
   hood.rotation.x = 0.1;
@@ -70,17 +70,26 @@ function buildCar() {
   box(1.92, 0.18, 0.3, lam(0x1a1a22), 0, 0.42, -2.2, g);      // rear bumper
   box(1.92, 0.18, 0.3, lam(0x1a1a22), 0, 0.42, 2.2, g);       // front bumper
   box(1.7, 0.14, 0.08, lam(0x2a2a2e), 0, 0.62, -2.22, g);     // grille strip rear
-  // headlights + taillights
+  // R15: sporty details like top 1-5 hero cars — racing stripe, rear spoiler, side skirts, chrome strip
+  box(0.34, 0.02, 1.5, lam(0xfff2c0), 0, 0.84, -1.55, g);      // stripe on sloped hood
+  box(0.34, 0.02, 0.75, lam(0xfff2c0), 0, 0.84, 1.85, g);      // stripe on rear deck
+  box(1.7, 0.08, 0.42, lam(0x1a1a22), 0, 1.34, 2.02, g);       // rear spoiler wing
+  box(0.08, 0.24, 0.08, lam(0x1a1a22), -0.6, 1.2, 2.02, g);    // spoiler support L
+  box(0.08, 0.24, 0.08, lam(0x1a1a22), 0.6, 1.2, 2.02, g);     // spoiler support R
+  box(0.08, 0.16, 3.6, lam(0x1a1a22), -0.96, 0.32, 0, g);      // side skirt L
+  box(0.08, 0.16, 3.6, lam(0x1a1a22), 0.96, 0.32, 0, g);       // side skirt R
+  box(1.5, 0.1, 0.06, lam(0xd8dce8), 0, 0.62, 2.24, g);        // chrome strip on rear face
+  // headlights + taillights (R15: bigger + brighter so the car reads from afar like top 1-5)
   for (const s of [-1, 1]) {
-    box(0.42, 0.16, 0.06, lam(0xfff2c0, 0xffedb0, 0.9), s * 0.62, 0.62, -2.24, g);
-    box(0.42, 0.16, 0.06, lam(0xd02020, 0xff2020, 0.9), s * 0.62, 0.62, 2.24, g);
+    box(0.5, 0.18, 0.06, lam(0xfff2c0, 0xffedb0, 1), s * 0.62, 0.62, -2.24, g);
+    box(0.5, 0.18, 0.06, lam(0xd02020, 0xff2020, 1), s * 0.62, 0.62, 2.24, g);
     box(0.12, 0.1, 0.3, lam(0x1a1a22), s * 0.98, 0.95, -0.6, g); // mirrors
   }
   // wheels with hubs
   for (const [wx, wz] of [[-0.92, 1.35], [0.92, 1.35], [-0.92, -1.35], [0.92, -1.35]]) {
     const w = cyl(0.36, 0.36, 0.24, lam(0x14141a), wx, 0.36, wz, g, 14);
     w.rotation.z = Math.PI / 2;
-    const hub = cyl(0.17, 0.17, 0.26, lam(0xb8bcc8), wx, 0.36, wz, g, 10);
+    const hub = cyl(0.17, 0.17, 0.26, lam(0xd8dce8), wx, 0.36, wz, g, 10); // R15: chrome-bright hubs
     hub.rotation.z = Math.PI / 2;
   }
   return g;
@@ -89,19 +98,20 @@ function buildCar() {
 // ---------- Hero (realistic head-to-toe, unchanged from v20) ----------
 function buildHero() {
   const g = new THREE.Group();
-  const skin = lam(0xc98e5e);
-  const shirt = lam(0x2e7a3a);
-  const pants = lam(0x23283a);
-  const shoe = lam(0x6e4a26);
+  const skin = lam(0xd89a68); // R15: brighter warm skin (top 1-5: bright, even, flat-lit)
+  const shirt = lam(0x2fbf4a); // R15: vivid bright green shirt
+  const pants = lam(0x2e4a7a); // R15: brighter denim blue pants
+  const shoe = lam(0x8a5a2a); // R15: brighter brown shoes
   const hairM = lam(0x1a1210);
-  // legs with knees + shoes
+  // legs with knees + shoes (R15: bigger shoes = sturdier, clearer silhouette)
   for (const s of [-1, 1]) {
     box(0.16, 0.42, 0.18, pants, s * 0.11, 0.62, 0, g);      // thigh
     box(0.14, 0.42, 0.15, pants, s * 0.11, 0.22, 0, g);      // shin
-    box(0.15, 0.09, 0.3, shoe, s * 0.11, 0.045, 0.05, g);    // shoe
+    box(0.17, 0.1, 0.34, shoe, s * 0.11, 0.05, 0.06, g);     // shoe
   }
   box(0.52, 0.55, 0.3, shirt, 0, 1.12, 0, g);                 // torso
-  box(0.56, 0.14, 0.32, shirt, 0, 1.44, 0, g);                // shoulders
+  box(0.58, 0.14, 0.32, shirt, 0, 1.44, 0, g);                // shoulders (R15: wider — chunkier hero silhouette)
+  box(0.54, 0.08, 0.32, lam(0xf2c230), 0, 0.88, 0, g);        // R15: bright yellow belt — breaks up the green, clearer waist
   box(0.12, 0.12, 0.14, skin, 0, 1.5, 0, g);                  // neck
   // arms: upper + forearm + hands, reaching forward (two-handed grip)
   for (const s of [-1, 1]) {
@@ -112,21 +122,23 @@ function buildHero() {
     const hand = box(0.1, 0.12, 0.14, skin, s * 0.12, 1.14, 0.52, g);
     hand.rotation.x = -1.2;
   }
-  // head with face
-  const head = box(0.3, 0.34, 0.28, skin, 0, 1.78, 0, g);
+  // head with face (R15: bigger head + fuller hair + bigger eyes — readable face like top 1-5)
+  const head = box(0.32, 0.36, 0.3, skin, 0, 1.79, 0, g);
   head.name = 'head';
-  box(0.32, 0.1, 0.3, hairM, 0, 1.97, -0.01, g);              // hair top
-  box(0.32, 0.2, 0.08, hairM, 0, 1.86, -0.13, g);             // hair back
+  box(0.34, 0.1, 0.32, hairM, 0, 1.99, -0.01, g);              // hair top
+  box(0.34, 0.22, 0.08, hairM, 0, 1.87, -0.14, g);             // hair back
+  box(0.06, 0.18, 0.3, hairM, -0.16, 1.88, 0, g);              // hair side L — fuller hair shape
+  box(0.06, 0.18, 0.3, hairM, 0.16, 1.88, 0, g);               // hair side R
   for (const s of [-1, 1]) {                                  // eyes
-    box(0.05, 0.03, 0.02, lam(0xffffff), s * 0.07, 1.82, 0.145, g);
-    box(0.025, 0.03, 0.015, lam(0x1a1210), s * 0.07, 1.82, 0.155, g);
-    box(0.07, 0.02, 0.015, hairM, s * 0.07, 1.885, 0.148, g); // brows
-    box(0.03, 0.07, 0.03, skin, s * 0.16, 1.79, 0.1, g);     // ears
+    box(0.065, 0.045, 0.02, lam(0xffffff), s * 0.08, 1.82, 0.145, g);
+    box(0.032, 0.045, 0.015, lam(0x1a1210), s * 0.08, 1.82, 0.155, g);
+    box(0.08, 0.025, 0.015, hairM, s * 0.08, 1.89, 0.148, g); // brows
+    box(0.035, 0.08, 0.035, skin, s * 0.175, 1.79, 0.1, g);   // ears
   }
-  box(0.04, 0.09, 0.04, lam(0xb57a4a), 0, 1.77, 0.15, g);     // nose
-  box(0.1, 0.02, 0.015, lam(0x7a2a20), 0, 1.68, 0.148, g);    // mouth
-  box(0.06, 0.02, 0.01, lam(0xa06a42), -0.09, 1.72, 0.148, g); // cheek L
-  box(0.06, 0.02, 0.01, lam(0xa06a42), 0.09, 1.72, 0.148, g);  // cheek R
+  box(0.045, 0.09, 0.04, lam(0xc08a58), 0, 1.77, 0.15, g);     // nose
+  box(0.11, 0.025, 0.015, lam(0x7a2a20), 0, 1.68, 0.148, g);   // mouth
+  box(0.07, 0.025, 0.01, lam(0xc98a5a), -0.1, 1.72, 0.148, g); // cheek L — brighter blush
+  box(0.07, 0.025, 0.01, lam(0xc98a5a), 0.1, 1.72, 0.148, g);  // cheek R
   // pistol: two-handed, low-ready at chest, index finger straight
   const gun = new THREE.Group();
   gun.position.set(0.05, 1.12, 0.56);
@@ -138,25 +150,33 @@ function buildHero() {
   return g;
 }
 
-// ---------- Helicopter ----------
+// ---------- Helicopter (R15: brighter body, clearer shape, brighter spotlight — like top 1-5) ----------
 function buildHeli() {
   const g = new THREE.Group();
-  const body = lam(0x9aa0ac);
+  const body = lam(0xd8dee8); // R15: bright white-gray body (was dull gray)
   box(2.0, 1.1, 3.2, body, 0, 0, 0, g);
-  box(2.05, 0.3, 1.2, lam(0x2a6ea8), 0, 0.15, 0.4, g);        // blue stripe
-  box(1.7, 0.5, 0.8, lam(0x12161f, 0x2a3a55, 0.4), 0, 0.2, -1.5, g); // cockpit
+  box(1.9, 0.5, 2.6, body, 0, -0.65, 0, g);                  // R15: belly — chunkier body shape
+  box(2.05, 0.3, 1.2, lam(0x1a6ae8), 0, 0.15, 0.4, g);        // R15: vivid blue stripe
+  box(1.7, 0.5, 0.8, lam(0x2a5a8a, 0x5aa8e8, 0.55), 0, 0.2, -1.5, g); // R15: bright blue cockpit glass
   box(0.35, 0.35, 3.4, body, 0, 0.25, 3.0, g);                // tail boom
   box(0.1, 1.0, 0.8, body, 0, 0.7, 4.6, g);                   // tail fin
+  box(1.4, 0.08, 0.5, body, 0, 0.55, 4.4, g);                 // R15: horizontal stabilizer — clearer tail shape
   const rotor = new THREE.Group(); rotor.position.y = 0.75; g.add(rotor);
   box(7.2, 0.06, 0.4, lam(0x22222a), 0, 0, 0, rotor);
   box(0.4, 0.06, 7.2, lam(0x22222a), 0, 0, 0, rotor);
+  box(0.3, 0.08, 0.42, lam(0xe02020, 0xff2020, 1), 3.45, 0, 0, rotor); // R15: red rotor tip
+  box(0.3, 0.08, 0.42, lam(0x20c040, 0x20ff40, 1), -3.45, 0, 0, rotor); // R15: green rotor tip
   rotor.rotation.y = 0.5;
   const tailRotor = new THREE.Group(); tailRotor.position.set(0.25, 0.7, 4.5); g.add(tailRotor);
   box(0.06, 1.6, 0.3, lam(0x22222a), 0, 0, 0, tailRotor);
   for (const s of [-1, 1]) box(0.08, 0.08, 2.6, lam(0x22222a), s * 0.8, -0.75, 0.4, g); // skids
-  // searchlight cone
+  // R15: searchlight housing under the nose
+  const lamp = cyl(0.28, 0.32, 0.3, lam(0x2a2e36), 0, -0.95, -1.2, g, 10);
+  lamp.rotation.x = Math.PI / 2;
+  box(0.3, 0.3, 0.06, lam(0xfff2c0, 0xffedb0, 1), 0, -0.95, -1.38, g); // bright lamp lens
+  // searchlight cone (R15: brighter — spotlight stays strong)
   const cone = new THREE.Mesh(new THREE.ConeGeometry(2.2, 9, 16, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+    new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
   cone.position.set(0, -4.6, -1.2); cone.rotation.x = 0.5; g.add(cone);
   return g;
 }
@@ -164,20 +184,23 @@ function buildHeli() {
 // ---------- Enemies / pedestrians ----------
 function buildPerson(shirtColor, withGun) {
   const g = new THREE.Group();
-  const skin = lam(0xc98e5e);
+  const skin = lam(0xd89a68); // R15: brighter warm skin
   const shirt = lam(shirtColor);
-  const pants = lam(0x23283a);
+  const pants = lam(0x2e4a7a); // R15: brighter denim blue pants
   for (const s of [-1, 1]) {
     box(0.15, 0.4, 0.17, pants, s * 0.1, 0.6, 0, g);
     box(0.13, 0.4, 0.14, pants, s * 0.1, 0.2, 0, g);
-    box(0.14, 0.08, 0.26, lam(0x3a2a1a), s * 0.1, 0.04, 0.04, g);
+    box(0.15, 0.08, 0.28, lam(0x5a3a22), s * 0.1, 0.04, 0.04, g); // R15: brighter shoes
   }
   box(0.48, 0.52, 0.28, shirt, 0, 1.08, 0, g);
+  box(0.52, 0.12, 0.3, shirt, 0, 1.38, 0, g); // R15: shoulders — chunkier, clearer silhouette
   box(0.11, 0.11, 0.13, skin, 0, 1.45, 0, g);
-  const head = box(0.28, 0.3, 0.26, skin, 0, 1.7, 0, g);
-  box(0.3, 0.09, 0.28, lam(0x1a1210), 0, 1.88, 0, g);
-  for (const s of [-1, 1]) {
-    box(0.05, 0.025, 0.015, lam(0x1a1210), s * 0.06, 1.72, 0.135, g);
+  const head = box(0.3, 0.32, 0.28, skin, 0, 1.71, 0, g); // R15: bigger head
+  box(0.32, 0.09, 0.3, lam(0x1a1210), 0, 1.9, 0, g); // hair top
+  box(0.32, 0.18, 0.07, lam(0x1a1210), 0, 1.81, -0.13, g); // R15: hair back — fuller hair shape
+  for (const s of [-1, 1]) { // R15: bigger eyes (white + pupil) — readable face at distance
+    box(0.07, 0.045, 0.015, lam(0xffffff), s * 0.065, 1.73, 0.14, g);
+    box(0.035, 0.045, 0.015, lam(0x1a1210), s * 0.065, 1.73, 0.15, g);
   }
   for (const s of [-1, 1]) {
     const arm = box(0.12, 0.32, 0.13, withGun ? shirt : skin, s * 0.28, 1.22, 0.02, g);
@@ -209,18 +232,22 @@ function placeActors() {
     heli.position.set(3, 14, -16); heli.rotation.y = -0.3;
     const spots = [[-3.6, -6.5, 0.2], [-1.1, -8.5, -0.1], [1.8, -10.5, 0.15], [4.6, -7.5, -0.2], [6.8, -4.5, 0.4]];
     for (const [x, z, ry] of spots) {
-      const e = buildPerson(0xb02020, true);
+      const e = buildPerson(0xe03131, true); // R15: brighter vivid red enemies
       e.position.set(x, 0, z); e.rotation.y = ry; scene.add(e); enemies.push(e);
     }
     const w1 = buildPerson(0x3a6ea8, false); w1.position.set(-5.5, 0, -18); scene.add(w1); walkers.push(w1);
+    const w2 = buildPerson(0xd85a8a, false); w2.position.set(7.5, 0, -16); w2.rotation.y = Math.PI; scene.add(w2); walkers.push(w2); // R15: colorful walker (pink)
   } else { // chase / map / interactive default
     car.position.set(0, 0, 6); car.rotation.y = 0; // rear toward camera
     hero.position.set(-40, -5, -60);
     heli.position.set(4, 15, -14); heli.rotation.y = -0.5;
     const w1 = buildPerson(0x3a6ea8, false); w1.position.set(-8.2, 0, -10); w1.rotation.y = 0.2; scene.add(w1);
     const w2 = buildPerson(0x7a3a6e, false); w2.position.set(8.4, 0, -22); w2.rotation.y = Math.PI - 0.3; scene.add(w2);
-    walkers.push(w1, w2);
+    const w3 = buildPerson(0xf2c230, false); w3.position.set(-8.4, 0, -26); w3.rotation.y = 0.4; scene.add(w3); // R15: colorful walker (yellow)
+    const w4 = buildPerson(0x2e8a7a, false); w4.position.set(8.6, 0, -34); w4.rotation.y = Math.PI - 0.5; scene.add(w4); // R15: colorful walker (teal)
+    walkers.push(w1, w2, w3, w4);
   }
+  heli.scale.setScalar(1.2); // R15: bigger helicopter — reads clearly like top 1-5
   scene.add(car); scene.add(hero); scene.add(heli);
 }
 placeActors();
