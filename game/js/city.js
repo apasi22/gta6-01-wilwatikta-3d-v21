@@ -46,32 +46,27 @@ function awningTexture(c1, c2) {
 }
 
 function skyTexture() {
+  // R14: bright blue daytime sky (was purple sunset) — wide blue, white clouds, sun high.
   return canvasTexture(1024, 512, (g, w, h) => {
     const grad = g.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0.0, '#241448');
-    grad.addColorStop(0.35, '#4a2364');
-    grad.addColorStop(0.62, '#8a2f6d');
-    grad.addColorStop(0.8, '#e85d6a');
-    grad.addColorStop(0.92, '#ff9a5c');
-    grad.addColorStop(1.0, '#ffc27a');
+    grad.addColorStop(0.0, '#1e6fd9');
+    grad.addColorStop(0.35, '#3f96e8');
+    grad.addColorStop(0.62, '#7ec3f2');
+    grad.addColorStop(0.82, '#a8d8f8');
+    grad.addColorStop(1.0, '#cfeaff');
     g.fillStyle = grad; g.fillRect(0, 0, w, h);
-    // sun disc low on the horizon
-    g.fillStyle = '#ffe9b0';
-    g.beginPath(); g.arc(w * 0.5, h * 0.86, 46, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,233,176,0.35)';
-    g.beginPath(); g.arc(w * 0.5, h * 0.86, 70, 0, Math.PI * 2); g.fill();
-    // stars up high
-    g.fillStyle = 'rgba(255,255,255,0.85)';
-    const starRng = mulberry32(7);
-    for (let i = 0; i < 90; i++) {
-      const x = starRng() * w, y = starRng() * h * 0.3, r = starRng() * 1.6 + 0.4;
-      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
-    }
-    // faint clouds
-    g.fillStyle = 'rgba(255,150,170,0.16)';
-    for (let i = 0; i < 8; i++) {
-      const x = mulberry32(100 + i)() * w, y = h * (0.3 + mulberry32(200 + i)() * 0.3);
-      g.beginPath(); g.ellipse(x, y, 90 + mulberry32(300 + i)() * 80, 12, 0, 0, Math.PI * 2); g.fill();
+    // sun high in the bright blue sky
+    g.fillStyle = '#fffbe8';
+    g.beginPath(); g.arc(w * 0.68, h * 0.2, 42, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,251,232,0.4)';
+    g.beginPath(); g.arc(w * 0.68, h * 0.2, 66, 0, Math.PI * 2); g.fill();
+    // white clouds, crisp and bright
+    g.fillStyle = 'rgba(255,255,255,0.92)';
+    for (let i = 0; i < 10; i++) {
+      const x = mulberry32(100 + i)() * w, y = h * (0.12 + mulberry32(200 + i)() * 0.45);
+      const rx = 70 + mulberry32(300 + i)() * 90;
+      g.beginPath(); g.ellipse(x, y, rx, 15, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(x + rx * 0.4, y - 8, rx * 0.55, 11, 0, 0, Math.PI * 2); g.fill();
     }
   });
 }
@@ -88,7 +83,7 @@ function glowTexture() {
 
 function pavingTexture() {
   return canvasTexture(256, 256, (g, w, h) => {
-    g.fillStyle = '#6b6480'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#a8a2b8'; g.fillRect(0, 0, w, h);
     g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 3;
     for (let i = 0; i <= 4; i++) {
       g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, h); g.stroke();
@@ -111,28 +106,29 @@ export function buildCity(THREE, scene, seed) {
 
   // ---- shared materials ----
   const M = {
-    asphalt: new THREE.MeshLambertMaterial({ color: 0x322b45 }),
-    asphaltPatch: new THREE.MeshLambertMaterial({ color: 0x2a2338 }),
+    asphalt: new THREE.MeshLambertMaterial({ color: 0x5a5f6e }),
+    asphaltPatch: new THREE.MeshLambertMaterial({ color: 0x4a4f5e }),
     sidewalk: new THREE.MeshLambertMaterial({ map: pavingTexture() }),
-    curb: new THREE.MeshLambertMaterial({ color: 0x4a4360 }),
+    curb: new THREE.MeshLambertMaterial({ color: 0x8a8498 }),
     lineYellow: new THREE.MeshLambertMaterial({ color: 0xf2c230 }),
     lineWhite: new THREE.MeshLambertMaterial({ color: 0xe8e4da }),
     lineWorn: new THREE.MeshLambertMaterial({ color: 0xcfc9ba }),
-    trunk: new THREE.MeshLambertMaterial({ color: 0x4a3220 }),
-    leafA: new THREE.MeshLambertMaterial({ color: 0x2e6b34 }),
-    leafB: new THREE.MeshLambertMaterial({ color: 0x3f8a3c }),
-    leafC: new THREE.MeshLambertMaterial({ color: 0x1f4d2a }),
+    trunk: new THREE.MeshLambertMaterial({ color: 0x6e4a26 }),
+    leafA: new THREE.MeshLambertMaterial({ color: 0x3fae4a }),
+    leafB: new THREE.MeshLambertMaterial({ color: 0x55c25e }),
+    leafC: new THREE.MeshLambertMaterial({ color: 0x2e8a3e }),
     pole: new THREE.MeshLambertMaterial({ color: 0x23202e }),
-    lampHead: new THREE.MeshLambertMaterial({ color: 0xffe9a8, emissive: 0xffc860, emissiveIntensity: 0.9 }),
+    lampHead: new THREE.MeshLambertMaterial({ color: 0xfff2c8, emissive: 0xffc860, emissiveIntensity: 0.15 }),
     dark: new THREE.MeshLambertMaterial({ color: 0x1c1826 }),
-    glass: new THREE.MeshLambertMaterial({ color: 0x101826, emissive: 0x2a3a55, emissiveIntensity: 0.35 }),
-    concrete: new THREE.MeshLambertMaterial({ color: 0x8a8494 }),
-    steel: new THREE.MeshLambertMaterial({ color: 0x5a5f6e }),
-    wood: new THREE.MeshLambertMaterial({ color: 0x6e4a26 }),
-    hydrant: new THREE.MeshLambertMaterial({ color: 0xb02020 }),
-    skyline: new THREE.MeshLambertMaterial({ color: 0x1d1533 }),
+    glass: new THREE.MeshLambertMaterial({ color: 0x4a8ac8, emissive: 0x3a6a9a, emissiveIntensity: 0.5 }),
+    concrete: new THREE.MeshLambertMaterial({ color: 0xa8a2b0 }),
+    steel: new THREE.MeshLambertMaterial({ color: 0x7a7f8e }),
+    wood: new THREE.MeshLambertMaterial({ color: 0x8a6234 }),
+    hydrant: new THREE.MeshLambertMaterial({ color: 0xd03030 }),
+    skyline: new THREE.MeshLambertMaterial({ color: 0x8aa8c8 }),
   };
-  const facadePalette = [0x9c8a6e, 0x8a5a44, 0x7d7468, 0x5e7d7a, 0xa88a4e, 0x4a4a5e, 0xb09a7a, 0x6e5a6e];
+  // R14: bright, clean daytime facades (was muted browns/greys) — whites, creams, light warm.
+  const facadePalette = [0xf2ead8, 0xffd9a0, 0xffffff, 0x7fb8a8, 0xe8b45e, 0x9ab8d8, 0xf0c8a0, 0xa8b8c8];
   const shopSigns = [
     ['BENGKEL BAMBANG', '#20344e', '#ffd24a', 'SERVICE · SPAREPART'],
     ['WARUNG KOPI', '#4a2a1a', '#ffe9a8', 'KOPI · NASI · SATE'],
@@ -196,14 +192,14 @@ export function buildCity(THREE, scene, seed) {
   sky.position.set(0, 55, -195); add(sky);
   const skylineRng = mulberry32(4242);
   for (let i = 0; i < 30; i++) {
-    const w = 10 + skylineRng() * 18, h = 14 + skylineRng() * 46;
+    const w = 10 + skylineRng() * 18, h = 8 + skylineRng() * 18;
     const x = -170 + i * 12 + skylineRng() * 6;
     box(w, h, 8, M.skyline, x, h / 2 - 1, -175 - skylineRng() * 25);
     // a few lit windows far away
     for (let k = 0; k < 4; k++) {
       if (skylineRng() > 0.5) {
         const win = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.4),
-          new THREE.MeshBasicMaterial({ color: 0xffd27a }));
+          new THREE.MeshBasicMaterial({ color: 0xbfe3ff }));
         win.position.set(x + (skylineRng() - 0.5) * (w - 3), 2 + skylineRng() * (h - 4), -170 - skylineRng() * 20);
         add(win);
       }
@@ -213,9 +209,10 @@ export function buildCity(THREE, scene, seed) {
   // ---- buildings (two rows flanking the avenue) ----
   const winFrames = [];
   const winPanes = [];
-  const litWarm = new THREE.MeshLambertMaterial({ color: 0xffd27a, emissive: 0xffb84a, emissiveIntensity: 0.85 });
-  const litCool = new THREE.MeshLambertMaterial({ color: 0xcfe4ff, emissive: 0x9ec2ff, emissiveIntensity: 0.5 });
-  const winDark = new THREE.MeshLambertMaterial({ color: 0x232838 });
+  // R14: daytime windows — bright sky-blue glass (was warm evening-lit).
+  const litWarm = new THREE.MeshLambertMaterial({ color: 0x8ec8f2, emissive: 0x5a9ad8, emissiveIntensity: 0.4 });
+  const litCool = new THREE.MeshLambertMaterial({ color: 0xcfe4ff, emissive: 0x9ec2ff, emissiveIntensity: 0.35 });
+  const winDark = new THREE.MeshLambertMaterial({ color: 0x4a6a8a });
   const winFrameMat = new THREE.MeshLambertMaterial({ color: 0x14101e });
 
   function buildOne(x, z, w, d, floors, facadeColor, shop) {
@@ -328,7 +325,7 @@ export function buildCity(THREE, scene, seed) {
     let z = 14;
     while (z > -150) {
       const w = 9 + rng() * 5, d = 8 + rng() * 4;
-      const floors = 3 + Math.floor(rng() * 6);
+      const floors = 2 + Math.floor(rng() * 3);
       const x = s * (17 + w / 2 + rng() * 3);
       buildOne(x, z - d / 2, w, d, floors, pick(rng, facadePalette), rng() > 0.35);
       z -= d + 2 + rng() * 4;
@@ -348,7 +345,7 @@ export function buildCity(THREE, scene, seed) {
   winPanes.forEach((p, i) => {
     const m = new THREE.Matrix4().makeTranslation(p[0], p[1], p[2]);
     panes.setMatrixAt(i, m);
-    panes.setColorAt(i, new THREE.Color(p[3] === litWarm ? 0xffd27a : p[3] === litCool ? 0xcfe4ff : 0x232838));
+    panes.setColorAt(i, new THREE.Color(p[3] === litWarm ? 0x8ec8f2 : p[3] === litCool ? 0xcfe4ff : 0x4a6a8a));
   });
   // instanced color needs material color white to show through
   panes.material = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.25 });
@@ -382,6 +379,31 @@ export function buildCity(THREE, scene, seed) {
     b.scale.y = 0.7; add(b);
   }
 
+  // ---- palm trees (coastal boulevard, R14) — tall trunk + vivid drooping fronds ----
+  function palm(x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); root.add(g); stats.meshes++;
+    const trunkH = 4.4 + rng() * 1.4;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.22, trunkH, 8), M.trunk);
+    trunk.position.y = trunkH / 2; trunk.rotation.z = 0.07; g.add(trunk); stats.meshes++;
+    const nF = 6 + Math.floor(rng() * 2);
+    for (let i = 0; i < nF; i++) {
+      const holder = new THREE.Group();
+      holder.position.y = trunkH + 0.1;
+      holder.rotation.y = (i / nF) * Math.PI * 2 + rng() * 0.3;
+      g.add(holder);
+      const frond = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.05, 2.4), pick(rng, [M.leafA, M.leafB]));
+      frond.position.z = 1.2;
+      frond.rotation.x = 0.5 + rng() * 0.3;
+      holder.add(frond); stats.meshes++;
+    }
+    const nuts = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6),
+      new THREE.MeshLambertMaterial({ color: 0x8a6234 }));
+    nuts.position.y = trunkH - 0.1; g.add(nuts); stats.meshes++;
+    stats.trees++;
+  }
+  for (const z of [-14, -38, -62, -86, -110, -134]) palm(-12.6, z);
+  for (const z of [-26, -50, -74, -98, -122]) palm(12.6, z);
+
   // ---- lamps (pole + curved arm + glow + ground pool) ----
   const glowTex = glowTexture();
   for (let z = 8; z > -140; z -= 15) {
@@ -395,10 +417,10 @@ export function buildCity(THREE, scene, seed) {
       arm.position.set(-s * 0.7, 5.15, 0); arm.rotation.z = s * 1.1; g.add(arm); stats.meshes++;
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), M.lampHead);
       head.position.set(-s * 1.35, 5.0, 0); head.scale.y = 0.75; g.add(head); stats.meshes++;
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.85, depthWrite: false }));
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.22, depthWrite: false }));
       glow.position.set(-s * 1.35, 5.0, 0); glow.scale.set(3.4, 3.4, 1); g.add(glow); stats.meshes++;
       const pool = new THREE.Mesh(new THREE.CircleGeometry(2.6, 20),
-        new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true, opacity: 0.1, depthWrite: false }));
+        new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true, opacity: 0.03, depthWrite: false }));
       pool.rotation.x = -Math.PI / 2; pool.position.set(-s * 1.35, 0.32, 0); g.add(pool); stats.meshes++;
       stats.lamps++;
     }

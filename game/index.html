@@ -41,9 +41,9 @@
 
   /* ---------- left panel: minimap + mission ---------- */
   #left-panel { position: absolute; top: 12px; left: 12px; z-index: 5; width: 232px; }
-  #minimap-wrap { width: 148px; height: 148px; border-radius: 50%; overflow: hidden;
+  #minimap-wrap { width: 128px; height: 128px; border-radius: 50%; overflow: hidden;
     border: 4px solid #ffd24a; box-shadow: 0 4px 16px rgba(0,0,0,0.5); background: #22304a; }
-  #minimap { width: 148px; height: 148px; display: block; }
+  #minimap { width: 128px; height: 128px; display: block; }
   #mission-box { margin-top: 8px; padding: 10px 12px; }
   #district { font-size: 13px; font-weight: 800; letter-spacing: 1px; }
   #street { font-size: 11px; color: #cfc9ba; margin-top: 2px; }
@@ -59,6 +59,25 @@
   #health-label { font-size: 11px; margin-top: 8px; letter-spacing: 1px; }
   #health-bar { height: 8px; background: rgba(255,255,255,0.18); border-radius: 4px; margin-top: 3px; }
   #health-fill { height: 100%; width: 100%; background: #4ade80; border-radius: 4px; }
+  #armour-label { font-size: 11px; margin-top: 6px; letter-spacing: 1px; }
+  #armour-bar { height: 8px; background: rgba(255,255,255,0.18); border-radius: 4px; margin-top: 3px; }
+  #armour-fill { height: 100%; width: 75%; background: #38bdf8; border-radius: 4px; }
+  #respect-label { font-size: 11px; margin-top: 6px; letter-spacing: 1px; }
+  #respect-bar { height: 8px; background: rgba(255,255,255,0.18); border-radius: 4px; margin-top: 3px; }
+  #respect-fill { height: 100%; width: 62%; background: #ffd24a; border-radius: 4px; }
+
+  /* ---------- WPD units panel (R14, top-10 HUD) ---------- */
+  #wpd-box { margin-top: 8px; padding: 8px 12px; }
+  #wpd-box h3 { font-size: 11px; letter-spacing: 2px; color: #ffd24a; }
+  .wpd-unit { display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; line-height: 1.3; }
+  .wpd-unit .uname { font-weight: 800; }
+  .wpd-unit .udist { color: #cfc9ba; }
+  .wpd-unit .ustat { font-weight: 800; padding: 1px 6px; border-radius: 4px; font-size: 10px; letter-spacing: 0.5px; }
+  .ustat.pursuit { background: #b45309; color: #fff; }
+  .ustat.ramming { background: #c02020; color: #fff; }
+  .ustat.spotlight { background: #1d4ed8; color: #fff; }
+  .ustat.roadblock { background: #ea580c; color: #fff; }
+  .wslot .wprice { font-size: 9px; color: #ffd24a; display: block; font-weight: 700; }
 
   /* ---------- dialogue + crew ---------- */
   #dlg-bar { position: absolute; bottom: 108px; left: 50%; transform: translateX(-50%);
@@ -169,16 +188,16 @@
 
 <!-- top-right HUD -->
 <div id="top-hud">
-  <div id="clock">DAY 1 · 18:41 · 1998</div>
+  <div id="clock">DAY 1 · 16:00 · 1998</div>
   <div id="money">$12,480</div>
   <div id="stars">★★★★<span class="off">☆</span></div>
   <div id="insight"><span class="badge">IN SIGHT</span><span class="sub">search zone follows you</span></div>
   <div id="weapons">
-    <div class="wslot"><span class="num">0</span><span class="icon">✊</span><span class="wname">FIST</span><span class="wammo">∞</span></div>
-    <div class="wslot"><span class="num">1</span><span class="icon">🔫</span><span class="wname">PISTOL</span><span class="wammo">12/60</span></div>
-    <div class="wslot active"><span class="num">2</span><span class="icon">🔫</span><span class="wname">SMG TAWON</span><span class="wammo">32/160</span></div>
-    <div class="wslot"><span class="num">3</span><span class="icon">🔫</span><span class="wname">SHOTGUN</span><span class="wammo">LOCKED</span></div>
-    <div class="wslot"><span class="num">4</span><span class="icon">🔫</span><span class="wname">RIFLE</span><span class="wammo">LOCKED</span></div>
+    <div class="wslot"><span class="num">0</span><span class="icon">✊</span><span class="wname">FIST</span><span class="wammo">∞</span><span class="wprice">—</span></div>
+    <div class="wslot"><span class="num">1</span><span class="icon">🔫</span><span class="wname">PISTOL</span><span class="wammo">12/60</span><span class="wprice">$450</span></div>
+    <div class="wslot active"><span class="num">2</span><span class="icon">🔫</span><span class="wname">SMG TAWON</span><span class="wammo">32/160</span><span class="wprice">$800</span></div>
+    <div class="wslot"><span class="num">3</span><span class="icon">🔫</span><span class="wname">SHOTGUN</span><span class="wammo">LOCKED</span><span class="wprice">$1,200</span></div>
+    <div class="wslot"><span class="num">4</span><span class="icon">🔫</span><span class="wname">RIFLE</span><span class="wammo">LOCKED</span><span class="wprice">$2,500</span></div>
   </div>
   <div id="weapon-name">SMG TAWON</div>
   <span id="weapon-count" style="display:none">32/160</span>
@@ -186,14 +205,14 @@
 
 <!-- left panel -->
 <div id="left-panel">
-  <div id="minimap-wrap"><canvas id="minimap" width="148" height="148"></canvas></div>
+  <div id="minimap-wrap"><canvas id="minimap" width="128" height="128"></canvas></div>
   <div id="mission-box" class="panel">
     <div id="district">ALUN-ALUN</div>
     <div id="street">Jl. Gamelan</div>
     <div id="rep">REP FIXER · 1320 · LV. 4</div>
     <h3>STORY MISSION</h3>
     <div id="mission-num">MISSION 6/12 —</div>
-    <div id="mission-title">BALAPAN SENJA</div>
+    <div id="mission-title">BALAPAN SIANG</div>
     <div id="mission-desc">Checkpoint 1 of 4: Kalahkan 3 pembalap di Pantai Kidul.</div>
     <div id="mission-timer"><span id="mission-time">3:12</span><span id="mission-dist">▲ 168m</span></div>
     <div class="bar" style="height:5px;background:#ffd24a;border-radius:3px;width:62%;margin-top:3px"></div>
@@ -202,6 +221,17 @@
     <div id="mission-heli">HELI 2 — SPOTLIGHT — PANTAI KIDUL</div>
     <div id="health-label">HEALTH</div>
     <div id="health-bar"><div id="health-fill"></div></div>
+    <div id="armour-label">ARMOUR</div>
+    <div id="armour-bar"><div id="armour-fill"></div></div>
+    <div id="respect-label">RESPECT</div>
+    <div id="respect-bar"><div id="respect-fill"></div></div>
+  </div>
+  <div id="wpd-box" class="panel">
+    <h3>🚔 WPD UNITS</h3>
+    <div class="wpd-unit"><span class="uname">BRIPKA JOKO</span><span class="udist">42m</span><span class="ustat pursuit">PURSUIT</span></div>
+    <div class="wpd-unit"><span class="uname">AIPTU BUDI</span><span class="udist">68m</span><span class="ustat ramming">RAMMING</span></div>
+    <div class="wpd-unit"><span class="uname">HELI 2 · AIR</span><span class="udist">168m</span><span class="ustat spotlight">SPOTLIGHT</span></div>
+    <div class="wpd-unit"><span class="uname">UNIT 09 · BLOK</span><span class="udist">210m</span><span class="ustat roadblock">ROADBLOCK</span></div>
   </div>
 </div>
 
@@ -267,7 +297,7 @@
         <li class="done">3. Antar Paket ✓ <b>$400</b></li>
         <li class="done">4. Tagihan Pasar ✓ <b>$550</b></li>
         <li class="done">5. Mata-Mata ✓ <b>$500</b></li>
-        <li class="active">6. Balapan Senja ACTIVE <b>$700</b></li>
+        <li class="active">6. Balapan Siang ACTIVE <b>$700</b></li>
         <li>7. Gudang Segara — <b>$650</b></li>
         <li>8. Kabur dari WPD — <b>$600</b></li>
         <li>9. Heat Wave — <b>$750</b></li>
@@ -275,7 +305,7 @@
         <li>11. Double Cross — <b>$900</b></li>
         <li>12. The Last Ride — <b>$1200</b></li>
       </ol>
-      <div id="map-job"><b>CURRENT JOB</b><br><b>Balapan Senja</b><br>Checkpoint 1 of 4: KIDUL<br>GPS 202 m<br>M = TUTUP PETA · KLIK IKON UNTUK GPS</div>
+      <div id="map-job"><b>CURRENT JOB</b><br><b>Balapan Siang</b><br>Checkpoint 1 of 4: KIDUL<br>GPS 202 m<br>M = TUTUP PETA · KLIK IKON UNTUK GPS</div>
     </div>
     <div id="districts">
       <div class="district d1"><h4>PELABUHAN SEGARA</h4><span class="poi" style="left:34%;top:58%">Ⓦ Warehouse</span></div>
@@ -290,7 +320,7 @@
       <div class="row"><span>STORY</span><b>42%</b></div>
       <div class="row"><span>REP</span><b>FIXER · 1320</b></div>
       <div class="row"><span>CASH</span><b>$12,480</b></div>
-      <div class="row"><span>TIME</span><b>18:41 · DAY 1</b></div>
+      <div class="row"><span>TIME</span><b>16:00 · DAY 1</b></div>
       <div class="row"><span>WANTED</span><b>★★★★☆</b></div>
       <div class="row"><span>TAKEDOWNS</span><b>14</b></div>
       <div class="row"><span>CARS STOLEN</span><b>6</b></div>

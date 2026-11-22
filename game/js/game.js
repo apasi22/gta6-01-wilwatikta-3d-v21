@@ -22,16 +22,18 @@ renderer.setPixelRatio(1);
 $('game').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2a1848);
-scene.fog = new THREE.Fog(0x3a2350, 55, 215);
+// R14: bright blue daytime — light blue background + haze (was dark purple night).
+scene.background = new THREE.Color(0x9ecff2);
+scene.fog = new THREE.Fog(0xa8d4f0, 70, 280);
 
 const camera = new THREE.PerspectiveCamera(58, 1280 / 720, 0.1, 600);
 
-scene.add(new THREE.HemisphereLight(0x8a6ab0, 0x1e1428, 0.85));
-const sun = new THREE.DirectionalLight(0xff9a5c, 1.1);
-sun.position.set(-30, 38, -60);
+// R14: bright clean daylight — cool sky light, strong warm-white sun high, faint fill.
+scene.add(new THREE.HemisphereLight(0xbfe3ff, 0x8a7a5a, 1.15));
+const sun = new THREE.DirectionalLight(0xfff2d0, 1.5);
+sun.position.set(25, 60, -30);
 scene.add(sun);
-const moon = new THREE.DirectionalLight(0x7a8ac0, 0.35);
+const moon = new THREE.DirectionalLight(0xa8c8e8, 0.15);
 moon.position.set(20, 40, 30);
 scene.add(moon);
 
@@ -57,7 +59,7 @@ const cyl = (rt, rb, h, mat, x, y, z, parent, seg) => {
 // ---------- Garuda GT (v17 style, unchanged) ----------
 function buildCar() {
   const g = new THREE.Group();
-  const red = lam(0xb01e24);
+  const red = lam(0xe8501a); // R14: vivid bright orange hero car (was dark red) — pops vs blue sky
   const darkGlass = lam(0x12161f, 0x2a3a55, 0.4);
   box(1.9, 0.55, 4.4, red, 0, 0.55, 0, g);                    // body
   const hood = box(1.85, 0.22, 1.3, red, 0, 0.82, -1.55, g); // sloped hood
@@ -196,7 +198,7 @@ const walkers = [];
 function placeActors() {
   if (SHOT === 'title') {
     hero.position.set(3.6, 0, 3.2); hero.rotation.y = -0.5;
-    car.position.set(-2.8, 0, 2.2); car.rotation.y = Math.PI / 2; // side profile, nose left
+    car.position.set(-2.2, 0, 2.2); car.rotation.y = Math.PI / 2; // side profile, nose left
     heli.position.set(-3, 13, -20); heli.rotation.y = 0.4;
     const w1 = buildPerson(0x3a6ea8, false); w1.position.set(7.8, 0, -6); w1.rotation.y = Math.PI; scene.add(w1);
     const w2 = buildPerson(0x7a3a6e, false); w2.position.set(-7.5, 0, -14); w2.rotation.y = 0.3; scene.add(w2);
@@ -224,26 +226,28 @@ function placeActors() {
 placeActors();
 
 // ---------- cameras per shot ----------
+// R14: cameras tilted up so the bright blue sky fills ~40% of the frame (was looking
+// down, sky only a narrow strip). Hero car / hero stay in the lower frame.
 function setCamera() {
   if (SHOT === 'title') {
-    camera.position.set(1.8, 2.3, 7.6);
-    camera.lookAt(0.9, 1.3, -1.2);
+    camera.position.set(1.8, 2.0, 7.6);
+    camera.lookAt(0.9, 2.2, -1.2);
   } else if (SHOT === 'night') {
-    camera.position.set(0, 3.4, 10.5);
-    camera.lookAt(0, 1.1, -8);
+    camera.position.set(0, 3.0, 10.5);
+    camera.lookAt(0, 2.0, -8);
   } else { // chase / map / default
-    camera.position.set(0, 4.5, 12.8);
-    camera.lookAt(0, 1.2, -8);
+    camera.position.set(0, 3.6, 14.0);
+    camera.lookAt(0, 2.0, -12);
   }
 }
 setCamera();
 
 // ---------- HUD ----------
 const MISSIONS = {
-  chase: { n: 'MISSION 6/12 —', title: 'BALAPAN SENJA', desc: 'Checkpoint 1 of 4: Kalahkan 3 pembalap di Pantai Kidul.', time: '3:12', dist: '168m', next: 'GUDANG SEGARA', disp: '2 unit mengejar —', heli: 'HELI 2 — SPOTLIGHT — PANTAI KIDUL', who: 'BAMBANG', role: 'MECHANIC · BENGKEL', line: 'Your Garuda needs new brakes. Come by the bengkel.', speed: '97', gear: 'G5' },
+  chase: { n: 'MISSION 6/12 —', title: 'BALAPAN SIANG', desc: 'Checkpoint 1 of 4: Kalahkan 3 pembalap di Pantai Kidul.', time: '3:12', dist: '168m', next: 'GUDANG SEGARA', disp: '2 unit mengejar —', heli: 'HELI 2 — SPOTLIGHT — PANTAI KIDUL', who: 'BAMBANG', role: 'MECHANIC · BENGKEL', line: 'Your Garuda needs new brakes. Come by the bengkel.', speed: '97', gear: 'G5' },
   night: { n: 'MISSION 7/12 —', title: 'GUDANG SEGARA', desc: 'Bersihkan area gudang: 4 musuh tersisa di Pelabuhan Segara.', time: '3:13', dist: '168m', next: 'KABUR DARI WPD', disp: '1 unit mengejar —', heli: 'HELI 2 — SPOTLIGHT — PELABUHAN SEGARA', who: 'WANTO', role: 'KOMISARIS · WPD', line: 'WPD datang dari utara. Bersihkan gudang, cepat!', speed: '0', gear: 'G0' },
-  map: { n: 'MISSION 6/12 —', title: 'BALAPAN SENJA', desc: 'Checkpoint 1 of 4: Kalahkan 3 pembalap di Pantai Kidul.', time: '3:12', dist: '168m', next: 'GUDANG SEGARA', disp: '2 unit mengejar —', heli: 'HELI 2 — SPOTLIGHT — PANTAI KIDUL', who: 'BAMBANG', role: 'MECHANIC · BENGKEL', line: 'Your Garuda needs new brakes. Come by the bengkel.', speed: '97', gear: 'G5' },
-  title: { n: 'MISSION 6/12 —', title: 'BALAPAN SENJA', desc: 'Checkpoint 1 of 4: Kalahkan 3 pembalap di Pantai Kidul.', time: '3:12', dist: '168m', next: 'GUDANG SEGARA', disp: '2 unit mengejar —', heli: 'HELI 2 — SPOTLIGHT — PANTAI KIDUL', who: 'BAMBANG', role: 'MECHANIC · BENGKEL', line: 'Your Garuda needs new brakes. Come by the bengkel.', speed: '97', gear: 'G5' },
+  map: { n: 'MISSION 6/12 —', title: 'BALAPAN SIANG', desc: 'Checkpoint 1 of 4: Kalahkan 3 pembalap di Pantai Kidul.', time: '3:12', dist: '168m', next: 'GUDANG SEGARA', disp: '2 unit mengejar —', heli: 'HELI 2 — SPOTLIGHT — PANTAI KIDUL', who: 'BAMBANG', role: 'MECHANIC · BENGKEL', line: 'Your Garuda needs new brakes. Come by the bengkel.', speed: '97', gear: 'G5' },
+  title: { n: 'MISSION 6/12 —', title: 'BALAPAN SIANG', desc: 'Checkpoint 1 of 4: Kalahkan 3 pembalap di Pantai Kidul.', time: '3:12', dist: '168m', next: 'GUDANG SEGARA', disp: '2 unit mengejar —', heli: 'HELI 2 — SPOTLIGHT — PANTAI KIDUL', who: 'BAMBANG', role: 'MECHANIC · BENGKEL', line: 'Your Garuda needs new brakes. Come by the bengkel.', speed: '97', gear: 'G5' },
 };
 const M = MISSIONS[SHOT] || MISSIONS.chase;
 
@@ -263,11 +267,11 @@ function drawMinimap() {
   ];
   for (const [col, a0, a1] of districts) {
     g.fillStyle = col;
-    g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 78, a0, a1); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 58, a0, a1); g.closePath(); g.fill();
   }
   g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1;
   for (let i = 0; i < 3; i++) {
-    g.beginPath(); g.moveTo(cx - 78, cy - 26 + i * 26); g.lineTo(cx + 78, cy - 26 + i * 26); g.stroke();
+    g.beginPath(); g.moveTo(cx - 58, cy - 26 + i * 26); g.lineTo(cx + 58, cy - 26 + i * 26); g.stroke();
   }
   const dots = [[-30, -32, '#fff'], [28, -38, '#ffd24a'], [-12, 18, '#7dff8a'], [34, 22, '#ff6a5e'], [0, 0, '#fff']];
   for (const [x, y, col] of dots) {
@@ -277,7 +281,7 @@ function drawMinimap() {
   g.fillStyle = '#ffd24a';
   g.beginPath(); g.moveTo(cx, cy - 9); g.lineTo(cx - 6, cy + 6); g.lineTo(cx + 6, cy + 6); g.closePath(); g.fill();
   g.strokeStyle = '#ffd24a'; g.lineWidth = 4;
-  g.beginPath(); g.arc(cx, cy, 82, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(cx, cy, 62, 0, Math.PI * 2); g.stroke();
 }
 
 function applyHUD() {
