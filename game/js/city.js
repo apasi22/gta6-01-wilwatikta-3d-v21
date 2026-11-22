@@ -1,351 +1,444 @@
-// Wilwatikta 3D — the city: bright blue daytime coast, clean facades, palms.
-// A fresh build of the street the game plays on: sky, road, buildings, palms,
-// lamps, parked cars and the WPD police car. Three.js r160, ES module.
+// Wilwatikta 3D — city builder (round 17, fresh).
+// Bright-blue daytime coastal city: sky, road, buildings, palms, traffic.
+// Written fresh from the design brief; no old file was read.
 import * as THREE from 'three';
 
-// ------------------------------------------------------------------ helpers
+export const ROAD_LENGTH = 230;
+export const ROAD_WIDTH = 14;
+export const SIDEWALK = 4;
 
-/** A box mesh with a flat Lambert material, placed and added to a parent. */
-function box(parent, w, h, d, color, x, y, z, ry = 0) {
-  const m = new THREE.Mesh(
-    new THREE.BoxGeometry(w, h, d),
-    new THREE.MeshLambertMaterial({ color })
+// Bright daytime palette (clean facades, vivid green, warm road furniture).
+const C = {
+  asphalt: 0x33363d,
+  asphaltEdge: 0x2a2d33,
+  sidewalk: 0x9aa0a8,
+  sidewalkEdge: 0x7d838c,
+  lineYellow: 0xf7c948,
+  lineWhite: 0xe8ecf1,
+  trunk: 0x7a5230,
+  palmLeaf: 0x2fae4e,
+  palmLeaf2: 0x37c25a,
+  treeLeaf: 0x2e9e4f,
+  treeLeaf2: 0x35b45a,
+  lampPole: 0x3a4048,
+  glass: 0x274b6d,
+  glassHi: 0x4d7ea8,
+};
+
+function canvasTexture(w, h, draw) {
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  draw(cv.getContext('2d'), w, h);
+  const tx = new THREE.CanvasTexture(cv);
+  tx.colorSpace = THREE.SRGBColorSpace;
+  tx.anisotropy = 4;
+  return tx;
+}
+
+// --- sky -----------------------------------------------------------------
+function skyDome(scene) {
+  const tex = canvasTexture(4, 512, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0.0, '#1e6fd9');
+    grad.addColorStop(0.35, '#3f96e8');
+    grad.addColorStop(0.65, '#7ec3f2');
+    grad.addColorStop(1.0, '#cfeaff');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, w, h);
+  });
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(320, 24, 16),
+    new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false })
   );
-  m.position.set(x, y, z);
-  m.rotation.y = ry;
-  parent.add(m);
-  return m;
+  scene.add(sky);
 }
 
-/** A cylinder mesh (trunks, poles, wheels), placed and added to a parent. */
-function cyl(parent, rTop, rBottom, h, color, x, y, z, seg = 10) {
-  const m = new THREE.Mesh(
-    new THREE.CylinderGeometry(rTop, rBottom, h, seg),
-    new THREE.MeshLambertMaterial({ color })
-  );
-  m.position.set(x, y, z);
-  parent.add(m);
-  return m;
-}
-
-/** A sphere mesh (canopies, coconuts), placed and added to a parent. */
-function ball(parent, r, color, x, y, z, sx = 1, sy = 1, sz = 1) {
-  const m = new THREE.Mesh(
-    new THREE.SphereGeometry(r, 12, 10),
-    new THREE.MeshLambertMaterial({ color })
-  );
-  m.position.set(x, y, z);
-  m.scale.set(sx, sy, sz);
-  parent.add(m);
-  return m;
-}
-
-/** A canvas texture with text on it, for shop signs. */
-function signTexture(text, bg, fg) {
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 128;
-  const g = c.getContext('2d');
-  g.fillStyle = bg;
-  g.fillRect(0, 0, 512, 128);
-  g.fillStyle = fg;
-  g.font = 'bold 64px Arial, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(text, 256, 68);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
-// ------------------------------------------------------------------ sky
-
-/** Bright blue daytime sky: gradient background, high sun, white clouds. */
-export function buildSky(scene) {
-  const c = document.createElement('canvas');
-  c.width = 16;
-  c.height = 512;
-  const g = c.getContext('2d');
-  const grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0.0, '#1e6fd9');
-  grad.addColorStop(0.38, '#3f96e8');
-  grad.addColorStop(0.72, '#7ec3f2');
-  grad.addColorStop(1.0, '#cfeaff');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 16, 512);
-  const sky = new THREE.CanvasTexture(c);
-  sky.colorSpace = THREE.SRGBColorSpace;
-  scene.background = sky;
-
-  // High sun: a pale disc with a soft halo, upper right of the frame.
+function sunDisc(scene) {
   const sun = new THREE.Mesh(
-    new THREE.CircleGeometry(3.4, 32),
-    new THREE.MeshBasicMaterial({ color: 0xfffbe8, fog: false })
+    new THREE.CircleGeometry(14, 32),
+    new THREE.MeshBasicMaterial({ color: 0xfff6bf, fog: false })
   );
-  sun.position.set(20, 30, -48);
-  sun.lookAt(0, 3, 12);
+  sun.position.set(-70, 150, -190);
+  sun.lookAt(0, 0, 0);
   scene.add(sun);
-  const halo = new THREE.Mesh(
-    new THREE.CircleGeometry(5.2, 32),
-    new THREE.MeshBasicMaterial({ color: 0xfffbe8, transparent: true, opacity: 0.28, fog: false })
+  const glow = new THREE.Mesh(
+    new THREE.CircleGeometry(26, 32),
+    new THREE.MeshBasicMaterial({ color: 0xfff9d6, transparent: true, opacity: 0.35, fog: false })
   );
-  halo.position.set(20, 30, -48.2);
-  halo.lookAt(0, 3, 12);
-  scene.add(halo);
-
-  // White clouds: flattened puffs drifting high over the boulevard.
-  const cloudSpots = [
-    [-16, 22, -38, 3.2], [6, 24, -44, 4.0], [18, 21, -30, 2.6],
-    [-8, 25, -18, 3.6], [14, 23, -52, 3.0], [-22, 20, -12, 2.4],
-  ];
-  for (const [x, y, z, s] of cloudSpots) {
-    const cloud = new THREE.Group();
-    ball(cloud, 1.0 * s, 0xffffff, 0, 0, 0, 1.6, 0.55, 1.0);
-    ball(cloud, 0.7 * s, 0xffffff, -1.1 * s, -0.15 * s, 0, 1.2, 0.5, 0.9);
-    ball(cloud, 0.75 * s, 0xffffff, 1.1 * s, -0.1 * s, 0, 1.3, 0.5, 0.9);
-    cloud.position.set(x, y, z);
-    // Clouds stay paper-white: unlit, so the sun never greys them.
-    cloud.traverse((m) => {
-      if (m.isMesh) m.material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    });
-    scene.add(cloud);
-  }
+  glow.position.set(-70, 150, -191);
+  glow.lookAt(0, 0, 0);
+  scene.add(glow);
 }
 
-// ------------------------------------------------------------------ street
-
-/** The boulevard: asphalt, sidewalks, curbs, crosswalks and lane dashes. */
-function buildStreet(scene) {
-  // Ground base: pale green that frames the road.
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(120, 110),
-    new THREE.MeshLambertMaterial({ color: 0x9fc98a })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set(0, -0.05, -25);
-  scene.add(ground);
-
-  // Asphalt road, running away from the camera down -Z.
-  const road = new THREE.Mesh(
-    new THREE.PlaneGeometry(10, 95),
-    new THREE.MeshLambertMaterial({ color: 0x3a3f4a })
-  );
-  road.rotation.x = -Math.PI / 2;
-  road.position.set(0, 0, -28);
-  scene.add(road);
-
-  // Sidewalks, bright pale concrete on both sides of the road.
-  for (const side of [-1, 1]) {
-    const walk = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.4, 95),
-      new THREE.MeshLambertMaterial({ color: 0xcfd4da })
-    );
-    walk.rotation.x = -Math.PI / 2;
-    walk.position.set(side * 6.7, 0.06, -28);
-    scene.add(walk);
-    // Curb edge.
-    box(scene, 0.18, 0.14, 95, 0x9aa0a8, side * 5.05, 0.07, -28);
-  }
-
-  // Yellow centre dashes.
-  for (let z = 14; z > -70; z -= 3.4) {
-    box(scene, 0.28, 0.02, 1.5, 0xffd23f, 0, 0.02, z);
-  }
-  // White edge lines.
-  for (const side of [-1, 1]) {
-    box(scene, 0.16, 0.02, 95, 0xf2f5f7, side * 4.7, 0.02, -28);
-  }
-
-  // Crosswalks: broad white stripes across the road.
-  for (const cz of [3.5, -22]) {
-    for (let x = -4.4; x <= 4.4; x += 1.25) {
-      box(scene, 0.7, 0.02, 1.1, 0xf2f5f7, x, 0.02, cz);
-    }
-  }
-}
-
-/** One building: bright clean facade, blue-glass windows, roof slab, awning. */
-function building(scene, x, z, w, floors, facade, sign) {
-  const h = floors * 1.9 + 0.4;
-  const g = new THREE.Group();
-  box(g, w, h, 5.5, facade, 0, h / 2, 0);
-  // Roof slab, slightly wider, darker.
-  box(g, w + 0.3, 0.22, 5.9, 0x6b7280, 0, h + 0.1, 0);
-  // Blue-glass windows on the street face.
-  const face = x < 0 ? 1 : -1; // which side looks at the road
-  const winColor = 0x3f96e8;
-  for (let f = 0; f < floors; f++) {
-    const wy = 1.1 + f * 1.9;
-    const count = Math.max(2, Math.floor(w / 2.2));
-    for (let i = 0; i < count; i++) {
-      const wx = -w / 2 + 1.1 + (i * (w - 2.2)) / Math.max(1, count - 1);
-      const win = box(g, 0.95, 1.15, 0.08, winColor, wx, wy, face * 2.78);
-      win.material = new THREE.MeshLambertMaterial({ color: winColor, emissive: 0x1e6fd9, emissiveIntensity: 0.25 });
-    }
-  }
-  // Shop sign above the ground floor, when given.
-  if (sign) {
-    const tex = signTexture(sign.text, sign.bg, sign.fg);
-    const board = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.6, 0.9),
-      new THREE.MeshLambertMaterial({ map: tex })
-    );
-    board.position.set(0, 2.6, face * 2.82);
-    board.rotation.y = face > 0 ? 0 : Math.PI;
-    g.add(board);
-  }
-  // Awning stripe over the shopfront.
-  box(g, w * 0.7, 0.12, 0.9, 0xe8501a, 0, 2.1, face * 2.9);
-  g.position.set(x, 0, z);
-  scene.add(g);
-}
-
-/** Rows of 2-4 storey buildings lining both sides of the boulevard. */
-function buildBuildings(scene) {
-  const facades = [0xffffff, 0xfff3d6, 0xffd9a0, 0xe8f4ff, 0xffe1c2, 0xf6f1e7];
-  const signs = [
-    { text: 'KOPI WILWATIKTA', bg: '#1e6fd9', fg: '#ffffff' },
-    { text: 'BENGKEL BAMBANG', bg: '#e8501a', fg: '#ffffff' },
-    { text: 'PASAR SENJA', bg: '#2fbf4a', fg: '#ffffff' },
-    { text: 'BATIK LARAS', bg: '#7c4dff', fg: '#ffffff' },
-  ];
-  let s = 0;
-  for (let z = 12; z > -62; z -= 9.5) {
-    const floorsL = 2 + ((Math.abs(z) / 9.5 | 0) % 3);
-    const floorsR = 2 + ((Math.abs(z + 4) / 9.5 | 0) % 3);
-    building(scene, -11.5, z, 7.5, floorsL, facades[(s * 2) % facades.length], s % 3 === 0 ? signs[s % signs.length] : null);
-    building(scene, 11.5, z - 4, 7.0, floorsR, facades[(s * 2 + 1) % facades.length], s % 4 === 1 ? signs[(s + 1) % signs.length] : null);
-    s++;
-  }
-}
-
-/** One coastal palm: leaning trunk, vivid fronds, coconuts. */
-function palm(scene, x, z, scale = 1) {
-  const g = new THREE.Group();
-  const trunk = cyl(g, 0.09, 0.15, 3.4, 0x8a6a3f, 0, 1.7, 0);
-  trunk.rotation.z = 0.08;
-  const frondGreen = [0x2fbf4a, 0x27a844, 0x37d65e];
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    const frond = box(g, 1.6, 0.05, 0.42, frondGreen[i % 3], 0, 3.45, 0);
-    frond.position.x = Math.cos(a) * 0.72;
-    frond.position.z = Math.sin(a) * 0.72;
-    frond.rotation.y = -a;
-    frond.rotation.z = 0.85;
-    g.add(frond);
-  }
-  ball(g, 0.14, 0x6b4a1f, 0.2, 3.3, 0.1);
-  ball(g, 0.14, 0x6b4a1f, -0.18, 3.28, -0.08);
-  g.position.set(x, 0, z);
-  g.scale.setScalar(scale);
-  scene.add(g);
-}
-
-/** One round street tree: trunk and two green canopy balls. */
-function tree(scene, x, z) {
-  const g = new THREE.Group();
-  cyl(g, 0.11, 0.14, 1.4, 0x7a5a34, 0, 0.7, 0);
-  ball(g, 1.05, 0x3fae5a, 0, 1.9, 0, 1.15, 0.9, 1.15);
-  ball(g, 0.7, 0x57c96b, 0.6, 2.3, 0.2, 1, 0.8, 1);
-  g.position.set(x, 0, z);
-  scene.add(g);
-}
-
-/** One street lamp, dim in the daytime sun. */
-function lamp(scene, x, z) {
-  const g = new THREE.Group();
-  cyl(g, 0.06, 0.08, 3.6, 0x4a4f57, 0, 1.8, 0);
-  box(g, 1.1, 0.08, 0.08, 0x4a4f57, x < 0 ? 0.5 : -0.5, 3.55, 0);
-  box(g, 0.42, 0.12, 0.22, 0x8a8f96, x < 0 ? 0.95 : -0.95, 3.5, 0);
-  g.position.set(x, 0, z);
-  scene.add(g);
-}
-
-/** The green edges of the boulevard: 11 palms and trees, lamps between them. */
-function buildGreenery(scene) {
-  const palmSpots = [
-    [-6.6, 8, 1.0], [6.6, -2, 1.1], [-6.6, -10, 0.9], [6.6, -14, 1.0],
-    [-6.6, -24, 1.05], [6.6, -28, 0.95], [-6.6, -36, 1.1], [6.6, -40, 1.0],
-    [-6.6, -48, 0.9], [6.6, -52, 1.05], [-6.6, -58, 1.0],
-  ];
-  for (const [x, z, s] of palmSpots) palm(scene, x, z, s);
-  tree(scene, -6.6, -4);
-  tree(scene, 6.6, -8);
-  tree(scene, -6.6, -18);
-  tree(scene, 6.6, -34);
-  tree(scene, -6.6, -44);
-  tree(scene, 6.6, -56);
-  lamp(scene, -5.4, 6);
-  lamp(scene, 5.4, -6);
-  lamp(scene, -5.4, -20);
-  lamp(scene, 5.4, -32);
-  lamp(scene, -5.4, -46);
-  lamp(scene, 5.4, -58);
-}
-
-// ------------------------------------------------------------------ vehicles
-
-/** A simple parked car: body, cabin, wheels, bumpers, in a vivid colour. */
-function parkedCar(scene, x, z, color, ry) {
-  const g = new THREE.Group();
-  box(g, 1.8, 0.55, 3.6, color, 0, 0.5, 0);
-  box(g, 1.55, 0.5, 1.9, 0x7ec3f2, 0, 1.0, 0.1);
-  box(g, 1.82, 0.1, 3.65, 0x222222, 0, 0.26, 0);
-  for (const [wx, wz] of [[-0.85, 1.15], [0.85, 1.15], [-0.85, -1.15], [0.85, -1.15]]) {
-    const wheel = cyl(g, 0.34, 0.34, 0.22, 0x1a1a1a, wx, 0.34, wz, 12);
-    wheel.rotation.z = Math.PI / 2;
-  }
-  box(g, 0.4, 0.14, 0.06, 0xfff6c0, -0.55, 0.55, -1.82);
-  box(g, 0.4, 0.14, 0.06, 0xfff6c0, 0.55, 0.55, -1.82);
-  box(g, 0.4, 0.14, 0.06, 0xff2a1a, -0.55, 0.55, 1.82);
-  box(g, 0.4, 0.14, 0.06, 0xff2a1a, 0.55, 0.55, 1.82);
-  g.position.set(x, 0, z);
-  g.rotation.y = ry;
-  scene.add(g);
-}
-
-/** Parked cars in vivid colours along both curbs. */
-export function buildParkedCars(scene) {
+function clouds(scene) {
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
   const spots = [
-    [-3.6, -6, 0x2f7fe0, 0], [3.6, -12, 0xffd23f, Math.PI],
-    [-3.6, -18, 0x2fbf4a, 0], [3.6, -26, 0xe8ecf0, Math.PI],
-    [-3.6, -32, 0xff7fb0, 0], [3.6, -38, 0xff7a1a, Math.PI],
-    [-3.6, -44, 0x2f7fe0, 0], [3.6, -50, 0xffd23f, Math.PI],
+    [-38, 46, -70, 16], [24, 52, -95, 20], [58, 44, -55, 13],
+    [-62, 55, -120, 18], [8, 48, -140, 22], [44, 58, -160, 15],
+    [-18, 60, -60, 11], [72, 50, -110, 14], [-48, 42, -30, 12],
   ];
-  for (const [x, z, color, ry] of spots) parkedCar(scene, x, z, color, ry);
+  for (const [x, y, z, s] of spots) {
+    const puff = new THREE.Group();
+    const n = 3 + (Math.abs(x) % 3);
+    for (let i = 0; i < n; i++) {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(s * (0.45 + 0.2 * i), 12, 8), mat);
+      b.position.set((i - n / 2) * s * 0.55, (i % 2) * s * 0.12, 0);
+      b.scale.y = 0.38;
+      puff.add(b);
+    }
+    puff.position.set(x, y, z);
+    scene.add(puff);
+  }
 }
 
-/** The WPD police car: white body, vivid blue stripe, red/blue light bar. */
-export function buildPoliceCar(scene, x = 3.4, z = -24) {
-  const g = new THREE.Group();
-  box(g, 1.9, 0.55, 3.8, 0xf2f5f7, 0, 0.52, 0);
-  box(g, 1.65, 0.5, 2.0, 0x7ec3f2, 0, 1.02, 0.1);
-  // Vivid blue stripe along both flanks and the hood.
-  box(g, 0.06, 0.16, 3.7, 0x2f7fe0, -0.96, 0.55, 0);
-  box(g, 0.06, 0.16, 3.7, 0x2f7fe0, 0.96, 0.55, 0);
-  box(g, 1.9, 0.06, 0.5, 0x2f7fe0, 0, 0.82, -1.7);
-  // Light bar on the roof: red left, blue right, glowing.
-  const redBar = box(g, 0.55, 0.16, 0.3, 0xff2a1a, -0.35, 1.32, 0.1);
-  redBar.material = new THREE.MeshBasicMaterial({ color: 0xff2a1a });
-  const blueBar = box(g, 0.55, 0.16, 0.3, 0x2f7fe0, 0.35, 1.32, 0.1);
-  blueBar.material = new THREE.MeshBasicMaterial({ color: 0x2f7fe0 });
-  box(g, 1.3, 0.08, 0.34, 0x222222, 0, 1.24, 0.1);
-  for (const [wx, wz] of [[-0.88, 1.2], [0.88, 1.2], [-0.88, -1.2], [0.88, -1.2]]) {
-    const wheel = cyl(g, 0.36, 0.36, 0.22, 0x1a1a1a, wx, 0.36, wz, 12);
-    wheel.rotation.z = Math.PI / 2;
+// --- ground ----------------------------------------------------------------
+function road(scene) {
+  const mat = new THREE.MeshLambertMaterial({ color: C.asphalt });
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH, ROAD_LENGTH), mat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(0, 0, -60);
+  scene.add(ground);
+  // yellow double centre line
+  const lineMat = new THREE.MeshBasicMaterial({ color: C.lineYellow });
+  for (const dx of [-0.35, 0.35]) {
+    const line = new THREE.Mesh(new THREE.PlaneGeometry(0.28, ROAD_LENGTH), lineMat);
+    line.rotation.x = -Math.PI / 2;
+    line.position.set(dx, 0.02, -60);
+    scene.add(line);
   }
-  box(g, 0.42, 0.14, 0.06, 0xfff6c0, -0.55, 0.58, -1.92);
-  box(g, 0.42, 0.14, 0.06, 0xfff6c0, 0.55, 0.58, -1.92);
+  // white lane dashes
+  const dashMat = new THREE.MeshBasicMaterial({ color: C.lineWhite });
+  for (const dx of [-4.2, 4.2]) {
+    for (let z = -165; z < 45; z += 9) {
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 3.4), dashMat);
+      d.rotation.x = -Math.PI / 2;
+      d.position.set(dx, 0.02, z);
+      scene.add(d);
+    }
+  }
+  // sidewalks
+  const walkMat = new THREE.MeshLambertMaterial({ color: C.sidewalk });
+  for (const side of [-1, 1]) {
+    const walk = new THREE.Mesh(new THREE.PlaneGeometry(SIDEWALK, ROAD_LENGTH), walkMat);
+    walk.rotation.x = -Math.PI / 2;
+    walk.position.set(side * (ROAD_WIDTH / 2 + SIDEWALK / 2), 0.06, -60);
+    scene.add(walk);
+    const kerb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.22, ROAD_LENGTH),
+      new THREE.MeshLambertMaterial({ color: C.sidewalkEdge })
+    );
+    kerb.position.set(side * (ROAD_WIDTH / 2 + 0.15), 0.11, -60);
+    scene.add(kerb);
+  }
+}
+
+// --- buildings -------------------------------------------------------------
+const FACADE_COLORS = [
+  '#f4efe4', '#fbf7ee', '#ffe9c4', '#ffd9a0', '#f7d9c8',
+  '#e8f1f6', '#d9ecf7', '#fff3d6', '#f2e3d5', '#e6f0e2',
+];
+const ROOF_COLORS = [0x8a6f5c, 0x6b7a89, 0x9a8a76, 0x7a6a58, 0x5f7080];
+
+function facadeTexture(base, floors, cols) {
+  return canvasTexture(128, 256, (g, w, h) => {
+    g.fillStyle = base;
+    g.fillRect(0, 0, w, h);
+    // subtle top light
+    g.fillStyle = 'rgba(255,255,255,0.18)';
+    g.fillRect(0, 0, w, 14);
+    // ground-floor shop band
+    g.fillStyle = 'rgba(0,0,0,0.10)';
+    g.fillRect(0, h - 42, w, 42);
+    // windows: bright blue glass with a shine
+    const ww = 20, wh = 26, gx = (w - cols * ww) / (cols + 1);
+    const gy = 26;
+    for (let f = 0; f < floors; f++) {
+      for (let c = 0; c < cols; c++) {
+        const x = gx + c * (ww + gx);
+        const y = gy + f * ((h - 70 - gy) / Math.max(1, floors - 1 || 1));
+        g.fillStyle = '#274b6d';
+        g.fillRect(x, y, ww, wh);
+        g.fillStyle = '#6fa8d8';
+        g.fillRect(x + 3, y + 3, ww - 6, 7);
+        g.fillStyle = 'rgba(255,255,255,0.35)';
+        g.fillRect(x + 2, y + 2, 4, wh - 4);
+      }
+    }
+  });
+}
+
+function building(scene, x, z, w, h, d, color, floors) {
+  const group = new THREE.Group();
+  const tex = facadeTexture(color, floors, 3);
+  const side = new THREE.MeshLambertMaterial({ map: tex });
+  const roof = new THREE.MeshLambertMaterial({ color: ROOF_COLORS[Math.abs(Math.floor(x + z)) % ROOF_COLORS.length] });
+  const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [side, side, roof, roof, side, side]);
+  box.position.y = h / 2;
+  group.add(box);
+  // parapet cap
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.35, d + 0.4), roof);
+  cap.position.y = h + 0.17;
+  group.add(cap);
+  group.position.set(x, 0, z);
+  scene.add(group);
+  return group;
+}
+
+function buildings(scene) {
+  const spots = [];
+  for (let z = -100; z <= 42; z += 15) {
+    spots.push([-13.5 - (Math.abs(z) % 3), z, 9 + (Math.abs(z * 7) % 4)]);
+    spots.push([13.5 + (Math.abs(z * 5) % 3), z + 7, 9 + (Math.abs(z * 3) % 4)]);
+  }
+  spots.forEach(([x, z, w], i) => {
+    const floors = 2 + (i % 3); // 2–4 floors
+    const h = floors * 3.4 + 0.6;
+    const color = FACADE_COLORS[i % FACADE_COLORS.length];
+    building(scene, x, z, w, h, 9, color, floors);
+  });
+}
+
+// --- palms & trees -----------------------------------------------------------
+function palm(scene, x, z, s = 1) {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16 * s, 0.24 * s, 4.6 * s, 8),
+    new THREE.MeshLambertMaterial({ color: C.trunk })
+  );
+  trunk.position.y = 2.3 * s;
+  g.add(trunk);
+  const leafMat = new THREE.MeshLambertMaterial({ color: C.palmLeaf });
+  const leafMat2 = new THREE.MeshLambertMaterial({ color: C.palmLeaf2 });
+  const n = 7;
+  for (let i = 0; i < n; i++) {
+    const holder = new THREE.Group();
+    holder.position.y = 4.6 * s;
+    holder.rotation.y = (i / n) * Math.PI * 2 + (i % 2) * 0.25;
+    const frond = new THREE.Mesh(new THREE.BoxGeometry(2.3 * s, 0.09 * s, 0.55 * s), i % 2 ? leafMat : leafMat2);
+    frond.position.x = 1.1 * s;
+    frond.rotation.z = -0.85; // steep droop down, not a flat propeller
+    holder.add(frond);
+    // second drooping tip
+    const tip = new THREE.Mesh(new THREE.BoxGeometry(1.1 * s, 0.07 * s, 0.4 * s), i % 2 ? leafMat2 : leafMat);
+    tip.position.set(2.4 * s, -0.55 * s, 0);
+    tip.rotation.z = -1.05;
+    holder.add(tip);
+    g.add(holder);
+  }
+  // coconut cluster
+  const nuts = new THREE.Mesh(new THREE.SphereGeometry(0.28 * s, 8, 6), new THREE.MeshLambertMaterial({ color: 0x8a6d3b }));
+  nuts.position.y = 4.4 * s;
+  g.add(nuts);
   g.position.set(x, 0, z);
   scene.add(g);
+}
+
+function palms(scene) {
+  const spots = [
+    [-9.6, -8], [9.6, -18], [-9.6, -30], [9.6, -42], [-9.6, -55],
+    [9.6, -66], [-9.6, -78], [9.6, -90], [-9.6, -102], [9.6, -112], [-9.6, 8],
+  ];
+  spots.forEach(([x, z], i) => palm(scene, x, z, 0.95 + (i % 3) * 0.12));
+}
+
+function roundTree(scene, x, z, s = 1) {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14 * s, 0.2 * s, 1.6 * s, 8),
+    new THREE.MeshLambertMaterial({ color: C.trunk })
+  );
+  trunk.position.y = 0.8 * s;
+  g.add(trunk);
+  const leaf = new THREE.MeshLambertMaterial({ color: C.treeLeaf });
+  const leaf2 = new THREE.MeshLambertMaterial({ color: C.treeLeaf2 });
+  const c1 = new THREE.Mesh(new THREE.SphereGeometry(1.25 * s, 12, 9), leaf);
+  c1.position.y = 2.3 * s;
+  c1.scale.y = 0.85;
+  g.add(c1);
+  const c2 = new THREE.Mesh(new THREE.SphereGeometry(0.85 * s, 10, 8), leaf2);
+  c2.position.set(0.55 * s, 2.9 * s, 0.2 * s);
+  g.add(c2);
+  g.position.set(x, 0, z);
+  scene.add(g);
+}
+
+function trees(scene) {
+  const spots = [[-9.8, -22], [9.8, -34], [-9.8, -48], [9.8, -58], [-9.8, -70], [9.8, -84], [-9.8, -96], [9.8, -6], [-9.8, 16], [9.8, 26]];
+  spots.forEach(([x, z], i) => roundTree(scene, x, z, 0.9 + (i % 3) * 0.15));
+}
+
+// --- lamps & signs -----------------------------------------------------------
+function lamps(scene) {
+  const poleMat = new THREE.MeshLambertMaterial({ color: C.lampPole });
+  const lampMat = new THREE.MeshBasicMaterial({ color: 0xfff2b0 });
+  for (const [x, z] of [[-8.6, -14], [8.6, -26], [-8.6, -38], [8.6, -52], [-8.6, -64], [8.6, -76], [-8.6, -88], [8.6, -100]]) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 4.4, 8), poleMat);
+    pole.position.set(x, 2.2, z);
+    scene.add(pole);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.08, 0.08), poleMat);
+    arm.position.set(x + (x < 0 ? 0.5 : -0.5), 4.35, z);
+    scene.add(arm);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.24), lampMat);
+    head.position.set(x + (x < 0 ? 1.0 : -1.0), 4.3, z);
+    scene.add(head);
+  }
+}
+
+function signBoard(scene, text, sub, x, y, z, ry, w = 4.4) {
+  const tex = canvasTexture(512, 128, (g, cw, ch) => {
+    g.fillStyle = '#7a4a12';
+    g.fillRect(0, 0, cw, ch);
+    g.fillStyle = '#ffd23e';
+    g.fillRect(0, 0, cw, 10);
+    g.fillRect(0, ch - 10, cw, 10);
+    g.fillStyle = '#fff6d8';
+    g.font = 'bold 52px sans-serif';
+    g.textAlign = 'center';
+    g.fillText(text, cw / 2, 62);
+    g.font = '28px sans-serif';
+    g.fillStyle = '#ffe9a8';
+    g.fillText(sub, cw / 2, 102);
+  });
+  const board = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, w * 0.25),
+    new THREE.MeshBasicMaterial({ map: tex })
+  );
+  board.position.set(x, y, z);
+  board.rotation.y = ry;
+  scene.add(board);
+}
+
+function signs(scene) {
+  signBoard(scene, 'KOPI WILWATIKTA', 'kopi tubruk · sejak 1998', -10.6, 4.6, -20, Math.PI / 2);
+  signBoard(scene, 'BENGKEL BAMBANG', 'ban · rem · tune-up', 10.6, 4.2, -48, -Math.PI / 2);
+  signBoard(scene, 'PASAR SENJA', 'oleh-oleh · batik', -10.6, 4.4, -72, Math.PI / 2, 4.0);
+}
+
+// --- vehicles on the street --------------------------------------------------
+// Simple blocky street car (top-2 style: low, wide, dark glass band).
+export function simpleCar(color, opts = {}) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1.9, 0.52, 4.1),
+    new THREE.MeshLambertMaterial({ color })
+  );
+  body.position.y = 0.46;
+  g.add(body);
+  const skirt = new THREE.Mesh(
+    new THREE.BoxGeometry(1.94, 0.2, 4.14),
+    new THREE.MeshLambertMaterial({ color: 0x1c1f24 })
+  );
+  skirt.position.y = 0.2;
+  g.add(skirt);
+  const cabin = new THREE.Mesh(
+    new THREE.BoxGeometry(1.66, 0.44, 2.1),
+    new THREE.MeshLambertMaterial({ color: 0x181d24 })
+  );
+  cabin.position.set(0, 0.92, 0.25);
+  g.add(cabin);
+  const roof = new THREE.Mesh(
+    new THREE.BoxGeometry(1.68, 0.08, 2.0),
+    new THREE.MeshLambertMaterial({ color })
+  );
+  roof.position.set(0, 1.16, 0.25);
+  g.add(roof);
+  const lightMat = new THREE.MeshBasicMaterial({ color: 0xfff2c0 });
+  const tailMat = new THREE.MeshBasicMaterial({ color: 0xff2a1a });
+  for (const dx of [-0.62, 0.62]) {
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.08), lightMat);
+    head.position.set(dx, 0.5, -2.06);
+    g.add(head);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.08), tailMat);
+    tail.position.set(dx, 0.5, 2.06);
+    g.add(tail);
+  }
+  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x14161a });
+  const hubMat = new THREE.MeshBasicMaterial({ color: 0xb9c2cc });
+  for (const [dx, dz] of [[-0.95, -1.35], [0.95, -1.35], [-0.95, 1.35], [0.95, 1.35]]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.24, 12), wheelMat);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(dx, 0.34, dz);
+    g.add(w);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.26, 10), hubMat);
+    hub.rotation.z = Math.PI / 2;
+    hub.position.set(dx, 0.34, dz);
+    g.add(hub);
+  }
+  if (opts.police) {
+    const stripe = new THREE.Mesh(
+      new THREE.BoxGeometry(1.92, 0.14, 4.12),
+      new THREE.MeshBasicMaterial({ color: 0x2456e0 })
+    );
+    stripe.position.y = 0.62;
+    g.add(stripe);
+    const barBase = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.3), new THREE.MeshLambertMaterial({ color: 0x222222 }));
+    barBase.position.set(0, 1.26, 0.25);
+    g.add(barBase);
+    const red = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.14, 0.28), new THREE.MeshBasicMaterial({ color: 0xff2020 }));
+    red.position.set(-0.26, 1.34, 0.25);
+    g.add(red);
+    const blue = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.14, 0.28), new THREE.MeshBasicMaterial({ color: 0x2244ff }));
+    blue.position.set(0.26, 1.34, 0.25);
+    g.add(blue);
+  }
   return g;
 }
 
-// ------------------------------------------------------------------ entry
+function parkedCars(scene) {
+  const colors = [0x2f7fe0, 0xf7c948, 0x37b24d, 0xdfe3e8, 0xe86ba8, 0xe86a1a, 0x37c2b2];
+  const spots = [
+    [-9.4, -12, 0.06], [9.4, -24, -0.05], [-9.4, -36, 0.04], [9.4, -58, -0.07],
+    [-9.4, -68, 0.05], [9.4, -80, -0.04], [-9.4, -94, 0.06], [9.4, -108, -0.05],
+  ];
+  spots.forEach(([x, z, ry], i) => {
+    const car = simpleCar(colors[i % colors.length]);
+    car.position.set(x, 0, z);
+    car.rotation.y = (x < 0 ? Math.PI : 0) + ry;
+    scene.add(car);
+  });
+}
 
-/** Build the whole city into a scene: street, buildings, greenery. */
+function policeCar(scene) {
+  const car = simpleCar(0xf2f4f6, { police: true });
+  car.position.set(5.4, 0, -30);
+  car.rotation.y = Math.PI + 0.08;
+  scene.add(car);
+  const car2 = simpleCar(0xf2f4f6, { police: true });
+  car2.position.set(-5.2, 0, -58);
+  car2.rotation.y = -0.06;
+  scene.add(car2);
+}
+
+function traffic(scene) {
+  const cars = [];
+  const defs = [
+    [0x2f7fe0, -2.4, -16, 0], [0xf7c948, 2.6, -30, 0], [0xe86ba8, -2.2, -44, 0],
+    [0xdfe3e8, 2.4, -58, 0], [0x37b24d, -2.6, -72, 0], [0xe86a1a, 2.2, -88, 0],
+  ];
+  for (const [color, x, z, ry] of defs) {
+    const car = simpleCar(color);
+    car.position.set(x, 0, z);
+    car.rotation.y = ry;
+    scene.add(car);
+    cars.push(car);
+  }
+  return cars;
+}
+
+// --- build -------------------------------------------------------------------
 export function buildCity(scene) {
-  buildStreet(scene);
-  buildBuildings(scene);
-  buildGreenery(scene);
+  skyDome(scene);
+  sunDisc(scene);
+  clouds(scene);
+  road(scene);
+  buildings(scene);
+  palms(scene);
+  trees(scene);
+  lamps(scene);
+  signs(scene);
+  parkedCars(scene);
+  policeCar(scene);
+  const trafficCars = traffic(scene);
+  return { traffic: trafficCars };
 }
