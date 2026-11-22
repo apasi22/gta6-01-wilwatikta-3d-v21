@@ -87,20 +87,20 @@ function nightSky(scene) {
   }
   starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
   const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
-    color: 0xffffff, size: 3.5, sizeAttenuation: false, transparent: true, opacity: 1, fog: false,
+    color: 0xffffff, size: 4.5, sizeAttenuation: false, transparent: true, opacity: 1, fog: false,
   }));
   scene.add(stars);
   // pale moon as a glowing SPHERE. Placed top-CENTER (0,45,-120): the
   // diagnostic red sphere at (0,15,-60) rendered clearly, so this central
   // sky spot is proven visible; the earlier left/right spots were occluded.
   const moon = new THREE.Mesh(
-    new THREE.SphereGeometry(10, 16, 12),
+    new THREE.SphereGeometry(8, 16, 12),
     new THREE.MeshBasicMaterial({ color: 0xe8eef7, fog: false })
   );
   moon.position.set(0, 45, -120);
   scene.add(moon);
   const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(19, 16, 12),
+    new THREE.SphereGeometry(15, 16, 12),
     new THREE.MeshBasicMaterial({ color: 0xcdd9ee, transparent: true, opacity: 0.25, fog: false, depthWrite: false })
   );
   glow.position.set(0, 45, -120);

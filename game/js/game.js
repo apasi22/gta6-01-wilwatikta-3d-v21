@@ -515,7 +515,7 @@ export function boot() {
   if (shot === 'chase') {
     car.position.set(0.5, 0, 0);
     car.rotation.y = 0.15; // slight 3/4 rear angle so the wedge reads
-    car.scale.setScalar(1.1); // hero car bigger in frame, like top 2's
+    car.scale.setScalar(0.95); // slightly smaller hero car (user: was too big), still the hero
     heli.position.set(6.0, 7.5, -11); // fully inside the top-right of the frame
     heli.rotation.y = -0.5;
     const scooter = makeScooter();
@@ -534,7 +534,8 @@ export function boot() {
     show('hud', true); show('hud-topright', true); show('crew', true, 'flex');
     show('title-screen', false); show('map-screen', false); show('hit', false);
   } else if (shot === 'title') {
-    car.position.set(0.4, 0, 4.4); // profile view, low-center, nose clear of the menu buttons
+    car.position.set(0.8, 0, 4.4); // profile view, shifted right so the nose clears the menu buttons
+    car.scale.setScalar(0.85); // slightly smaller (user: was too big), still a clear hero
     car.rotation.y = Math.PI / 2; // front pointing left
     heli.position.set(4.5, 7.5, -7);
     heli.rotation.y = -0.4;
