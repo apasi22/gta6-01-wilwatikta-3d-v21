@@ -54,6 +54,59 @@ function skyDome(scene) {
   scene.add(sky);
 }
 
+// True night sky: near-black navy dome, stars, a pale moon + glow.
+function nightSky(scene) {
+  const tex = canvasTexture(4, 512, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0.0, '#040917');
+    grad.addColorStop(0.4, '#0a1a3a');
+    grad.addColorStop(0.75, '#16294d');
+    grad.addColorStop(1.0, '#2a3f66');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, w, h);
+  });
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(320, 24, 16),
+    new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false })
+  );
+  scene.add(sky);
+  // stars: small white points on a sphere well INSIDE the sky dome (radius
+  // 250 < dome 320) so the dome can never occlude them; bigger so they
+  // survive the JPEG at 1280x720.
+  const starGeo = new THREE.BufferGeometry();
+  const pts = [];
+  for (let i = 0; i < 300; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const e = 0.18 + Math.random() * 1.1; // elevation above the horizon
+    const r = 250;
+    pts.push(
+      Math.cos(a) * Math.cos(e) * r,
+      Math.sin(e) * r,
+      Math.sin(a) * Math.cos(e) * r
+    );
+  }
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+    color: 0xffffff, size: 3.5, sizeAttenuation: false, transparent: true, opacity: 1, fog: false,
+  }));
+  scene.add(stars);
+  // pale moon as a glowing SPHERE. Placed top-CENTER (0,45,-120): the
+  // diagnostic red sphere at (0,15,-60) rendered clearly, so this central
+  // sky spot is proven visible; the earlier left/right spots were occluded.
+  const moon = new THREE.Mesh(
+    new THREE.SphereGeometry(10, 16, 12),
+    new THREE.MeshBasicMaterial({ color: 0xe8eef7, fog: false })
+  );
+  moon.position.set(0, 45, -120);
+  scene.add(moon);
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(19, 16, 12),
+    new THREE.MeshBasicMaterial({ color: 0xcdd9ee, transparent: true, opacity: 0.25, fog: false, depthWrite: false })
+  );
+  glow.position.set(0, 45, -120);
+  scene.add(glow);
+}
+
 function sunDisc(scene) {
   const sun = new THREE.Mesh(
     new THREE.CircleGeometry(14, 32),
@@ -71,8 +124,8 @@ function sunDisc(scene) {
   scene.add(glow);
 }
 
-function clouds(scene) {
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+function clouds(scene, night = false) {
+  const mat = new THREE.MeshBasicMaterial({ color: night ? 0x2a3a55 : 0xffffff, transparent: night, opacity: night ? 0.85 : 1, fog: false });
   const spots = [
     [-38, 46, -70, 16], [24, 52, -95, 20], [58, 44, -55, 13],
     [-62, 55, -120, 18], [8, 48, -140, 22], [44, 58, -160, 15],
@@ -140,7 +193,7 @@ const FACADE_COLORS = [
 ];
 const ROOF_COLORS = [0x8a6f5c, 0x6b7a89, 0x9a8a76, 0x7a6a58, 0x5f7080];
 
-function facadeTexture(base, floors, cols) {
+function facadeTexture(base, floors, cols, night = false) {
   return canvasTexture(128, 256, (g, w, h) => {
     g.fillStyle = base;
     g.fillRect(0, 0, w, h);
@@ -150,16 +203,17 @@ function facadeTexture(base, floors, cols) {
     // ground-floor shop band
     g.fillStyle = 'rgba(0,0,0,0.10)';
     g.fillRect(0, h - 42, w, 42);
-    // windows: bright blue glass with a shine
+    // windows: bright blue glass with a shine (day) — warm lit windows at night
     const ww = 20, wh = 26, gx = (w - cols * ww) / (cols + 1);
     const gy = 26;
     for (let f = 0; f < floors; f++) {
       for (let c = 0; c < cols; c++) {
         const x = gx + c * (ww + gx);
         const y = gy + f * ((h - 70 - gy) / Math.max(1, floors - 1 || 1));
-        g.fillStyle = '#274b6d';
+        const lit = night && ((f * 7 + c * 3) % 3 === 0); // ~1 in 3 windows lit warm
+        g.fillStyle = lit ? '#ffca5a' : (night ? '#1a2a3a' : '#274b6d');
         g.fillRect(x, y, ww, wh);
-        g.fillStyle = '#6fa8d8';
+        g.fillStyle = lit ? '#ffe9a8' : '#6fa8d8';
         g.fillRect(x + 3, y + 3, ww - 6, 7);
         g.fillStyle = 'rgba(255,255,255,0.35)';
         g.fillRect(x + 2, y + 2, 4, wh - 4);
@@ -168,9 +222,9 @@ function facadeTexture(base, floors, cols) {
   });
 }
 
-function building(scene, x, z, w, h, d, color, floors) {
+function building(scene, x, z, w, h, d, color, floors, night = false) {
   const group = new THREE.Group();
-  const tex = facadeTexture(color, floors, 3);
+  const tex = facadeTexture(color, floors, 3, night);
   const side = new THREE.MeshLambertMaterial({ map: tex });
   const roof = new THREE.MeshLambertMaterial({ color: ROOF_COLORS[Math.abs(Math.floor(x + z)) % ROOF_COLORS.length] });
   const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [side, side, roof, roof, side, side]);
@@ -185,7 +239,7 @@ function building(scene, x, z, w, h, d, color, floors) {
   return group;
 }
 
-function buildings(scene) {
+function buildings(scene, night = false) {
   const spots = [];
   for (let z = -100; z <= 42; z += 15) {
     spots.push([-13.5 - (Math.abs(z) % 3), z, 9 + (Math.abs(z * 7) % 4)]);
@@ -195,7 +249,7 @@ function buildings(scene) {
     const floors = 2 + (i % 3); // 2–4 floors
     const h = floors * 3.4 + 0.6;
     const color = FACADE_COLORS[i % FACADE_COLORS.length];
-    building(scene, x, z, w, h, 9, color, floors);
+    building(scene, x, z, w, h, 9, color, floors, night);
   });
 }
 
@@ -269,9 +323,11 @@ function trees(scene) {
 }
 
 // --- lamps & signs -----------------------------------------------------------
-function lamps(scene) {
+function lamps(scene, night = false) {
   const poleMat = new THREE.MeshLambertMaterial({ color: C.lampPole });
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xfff2b0 });
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: 0.3, depthWrite: false });
+  const poolMat = new THREE.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: 0.16, depthWrite: false });
   for (const [x, z] of [[-8.6, -14], [8.6, -26], [-8.6, -38], [8.6, -52], [-8.6, -64], [8.6, -76], [-8.6, -88], [8.6, -100]]) {
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 4.4, 8), poleMat);
     pole.position.set(x, 2.2, z);
@@ -282,6 +338,16 @@ function lamps(scene) {
     const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.24), lampMat);
     head.position.set(x + (x < 0 ? 1.0 : -1.0), 4.3, z);
     scene.add(head);
+    if (night) {
+      // glowing halo around the lamp head + warm light pool on the road
+      const halo = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), glowMat);
+      halo.position.set(x + (x < 0 ? 1.0 : -1.0), 4.3, z);
+      scene.add(halo);
+      const pool = new THREE.Mesh(new THREE.CircleGeometry(1.7, 20), poolMat);
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(x + (x < 0 ? 1.0 : -1.0), 0.04, z);
+      scene.add(pool);
+    }
   }
 }
 
@@ -427,15 +493,19 @@ function traffic(scene) {
 }
 
 // --- build -------------------------------------------------------------------
-export function buildCity(scene) {
-  skyDome(scene);
-  sunDisc(scene);
-  clouds(scene);
+export function buildCity(scene, opts = {}) {
+  const night = !!opts.night;
+  if (night) nightSky(scene);
+  else {
+    skyDome(scene);
+    sunDisc(scene);
+  }
+  clouds(scene, night);
   road(scene);
-  buildings(scene);
+  buildings(scene, night);
   palms(scene);
   trees(scene);
-  lamps(scene);
+  lamps(scene, night);
   signs(scene);
   parkedCars(scene);
   policeCar(scene);

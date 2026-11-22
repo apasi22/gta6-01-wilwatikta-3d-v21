@@ -18,6 +18,8 @@ const HELI_WHITE = 0xd8dee8;
 const HELI_BLUE = 0x2456e0;
 
 // --- small simple people (top-2 style: small figures, small heads) ------------
+// Top 2's figures: a neck, a slightly wider torso, a rounder head with a
+// shaped hair cap — less "stick", more presence at small size.
 function makePerson({ shirt = GREEN_SHIRT, pants = DENIM, skin = SKIN, hair = HAIR, belt = null, scale = 1 } = {}) {
   const g = new THREE.Group();
   const mat = (c) => new THREE.MeshLambertMaterial({ color: c });
@@ -30,41 +32,53 @@ function makePerson({ shirt = GREEN_SHIRT, pants = DENIM, skin = SKIN, hair = HA
     shoe.position.set(dx, 0.045, 0.04);
     g.add(shoe);
   }
-  // torso (simple rectangular body)
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.58, 0.3), mat(shirt));
+  // torso (slightly wider, simple rectangular body)
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.58, 0.32), mat(shirt));
   torso.position.y = 0.79;
   g.add(torso);
   if (belt) {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.09, 0.32), mat(belt));
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.09, 0.34), mat(belt));
     b.position.y = 0.55;
     g.add(b);
   }
-  // arms
-  for (const dx of [-0.36, 0.36]) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.5, 0.15), mat(shirt));
+  // arms (a touch thicker, hanging at the sides)
+  for (const dx of [-0.38, 0.38]) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.16), mat(shirt));
     arm.position.set(dx, 0.78, 0);
     g.add(arm);
-    const hand = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.15), mat(skin));
+    const hand = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.11, 0.16), mat(skin));
     hand.position.set(dx, 0.48, 0);
     g.add(hand);
   }
-  // head — SMALL (top-2 proportion: ~22% of height), simple
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.32, 0.3), mat(skin));
-  head.position.y = 1.26;
+  // neck (small skin box so the head does not sit straight on the torso)
+  const neck = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.14), mat(skin));
+  neck.position.y = 1.12;
+  g.add(neck);
+  // head — rounder (slightly bigger, ~24% of height), simple
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.34, 0.32), mat(skin));
+  head.position.y = 1.32;
   g.add(head);
-  // hair cap (simple dark slab on top + back)
-  const hairTop = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.1, 0.32), mat(hair));
-  hairTop.position.y = 1.44;
+  // hair: a shaped cap (top + back + side slabs) instead of one flat slab
+  const hairTop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.12, 0.34), mat(hair));
+  hairTop.position.y = 1.5;
   g.add(hairTop);
-  const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.2, 0.08), mat(hair));
-  hairBack.position.set(0, 1.34, -0.15);
+  const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.08), mat(hair));
+  hairBack.position.set(0, 1.4, -0.16);
   g.add(hairBack);
-  // face: two tiny dark eyes on the +Z side
+  for (const dx of [-0.17, 0.17]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.16, 0.3), mat(hair));
+    side.position.set(dx, 1.42, 0);
+    g.add(side);
+  }
+  // face: two tiny dark eyes + brows on the +Z side
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
-  for (const dx of [-0.07, 0.07]) {
-    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.06, 0.02), eyeMat);
-    eye.position.set(dx, 1.28, 0.16);
+  for (const dx of [-0.08, 0.08]) {
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, 0.02), eyeMat);
+    eye.position.set(dx, 1.34, 0.17);
     g.add(eye);
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.025, 0.02), mat(hair));
+    brow.position.set(dx, 1.42, 0.17);
+    g.add(brow);
   }
   g.scale.setScalar(scale);
   return g;
@@ -77,7 +91,7 @@ function makeSugeng() {
     new THREE.BoxGeometry(0.12, 0.025, 0.02),
     new THREE.MeshBasicMaterial({ color: 0x7a3b1e })
   );
-  smile.position.set(0, 1.18, 0.16);
+  smile.position.set(0, 1.24, 0.17);
   s.add(smile);
   return s;
 }
@@ -90,80 +104,104 @@ function makeWalker(color) {
   return makePerson({ shirt: color, pants: 0x2c3440, skin: Math.random() > 0.5 ? SKIN : SKIN2 });
 }
 
-// --- Garuda GT hero car (top-2 style: LOW, WIDE wedge, red, dark cabin) -----
+// --- Garuda GT hero car (top-2 style: LOW, WIDE fastback wedge, red, dark cabin)
+// Top 2's Calyx Sprint GT: the roofline slopes down to the rear, the rear
+// window is a WIDE TALL sloped dark band, the rear deck slopes to the spoiler,
+// two BIG bright white taillights, a dark low bumper with a thin gold strip.
 function makeGarudaGT() {
   const g = new THREE.Group();
   const bodyMat = new THREE.MeshLambertMaterial({ color: CAR_RED });
   const darkMat = new THREE.MeshLambertMaterial({ color: CAR_DARK });
   const trimMat = new THREE.MeshLambertMaterial({ color: 0x1c1f24 });
-  // low wide main body — the wedge
+  // low wide main body — the wedge base
   const body = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.5, 4.6), bodyMat);
   body.position.y = 0.45;
   g.add(body);
-  // front nose (slightly lower, tapered look via a shorter front box)
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.38, 1.1), bodyMat);
-  nose.position.set(0, 0.4, -2.15);
+  // long low hood: nose slopes down toward the front (fastback front)
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.36, 1.35), bodyMat);
+  nose.position.set(0, 0.38, -2.22);
+  nose.rotation.x = -0.05;
   g.add(nose);
   // dark lower skirt
   const skirt = new THREE.Mesh(new THREE.BoxGeometry(2.08, 0.18, 4.62), trimMat);
   skirt.position.y = 0.18;
   g.add(skirt);
-  // cabin: red roof panel + DARK glass band (top-2: dark cabin, red roof)
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.4, 2.0), bodyMat);
+  // --- fastback cabin: the whole cabin tilts so the roof slopes down to the rear
+  const cabin = new THREE.Group();
   cabin.position.set(0, 0.88, 0.35);
+  cabin.rotation.x = 0.13; // rear edge drops, front edge rises: fastback slope
   g.add(cabin);
+  // cabin shell (red) + a thin red roof panel for a soft roof edge
+  const shell = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.4, 2.0), bodyMat);
+  cabin.add(shell);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.06, 2.02), bodyMat);
+  roof.position.y = 0.21;
+  cabin.add(roof);
   // dark side glass (both sides of the cabin)
   for (const dx of [-0.86, 0.86]) {
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.3, 1.8), darkMat);
-    glass.position.set(dx, 0.88, 0.35);
-    g.add(glass);
+    glass.position.set(dx, 0, 0);
+    cabin.add(glass);
   }
-  // dark rear window band (wide, flat, across the back of the cabin)
-  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.3, 0.05), darkMat);
-  rearGlass.position.set(0, 0.88, 1.38);
-  g.add(rearGlass);
   // dark windshield band (front of the cabin)
   const shield = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.3, 0.05), darkMat);
-  shield.position.set(0, 0.88, -0.68);
-  g.add(shield);
-  // low sleek rear spoiler lip + two small supports
-  const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.07, 0.34), trimMat);
-  spoiler.position.set(0, 0.82, 2.28);
+  shield.position.set(0, 0, -1.02);
+  cabin.add(shield);
+  // WIDE TALL sloped rear window: top leans forward, like top 2's fastback glass
+  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.58, 0.05), darkMat);
+  rearGlass.position.set(0, 0.04, 1.04);
+  rearGlass.rotation.x = -0.42;
+  cabin.add(rearGlass);
+  // sloped red rear deck (trunk lid): from the cabin rear down to the spoiler
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.05, 0.98), bodyMat);
+  deck.position.set(0, 0.86, 1.82);
+  deck.rotation.x = 0.15;
+  g.add(deck);
+  // low sleek rear spoiler lip (wider, slightly raised) + supports + end plates
+  const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.96, 0.07, 0.34), trimMat);
+  spoiler.position.set(0, 0.84, 2.28);
   g.add(spoiler);
   for (const dx of [-0.6, 0.6]) {
     const sup = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.1), trimMat);
-    sup.position.set(dx, 0.72, 2.22);
+    sup.position.set(dx, 0.74, 2.22);
     g.add(sup);
   }
-  // bright white taillights (rear corners) + red lower strip
-  const tailMat = new THREE.MeshBasicMaterial({ color: 0xffe9e6 });
-  const tailRed = new THREE.MeshBasicMaterial({ color: 0xff2a1a });
-  for (const dx of [-0.72, 0.72]) {
-    const t = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.13, 0.07), tailMat);
+  for (const dx of [-0.94, 0.94]) {
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 0.3), trimMat);
+    fin.position.set(dx, 0.9, 2.28);
+    g.add(fin);
+  }
+  // BIG bright white taillights (rear corners) + dark bumper + thin gold strip
+  const tailMat = new THREE.MeshBasicMaterial({ color: 0xfff6e6 });
+  for (const dx of [-0.7, 0.7]) {
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.18, 0.07), tailMat);
     t.position.set(dx, 0.52, 2.32);
     g.add(t);
   }
-  const tailStrip = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.09, 0.06), tailRed);
-  tailStrip.position.set(0, 0.36, 2.32);
-  g.add(tailStrip);
-  // bright headlights (front corners)
+  const bumper = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.16, 0.08), trimMat);
+  bumper.position.set(0, 0.28, 2.32);
+  g.add(bumper);
+  const goldStrip = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 0.06), new THREE.MeshBasicMaterial({ color: 0xd8a93c }));
+  goldStrip.position.set(0, 0.39, 2.33);
+  g.add(goldStrip);
+  // bright headlights (front corners, moved out with the longer nose)
   const headMat = new THREE.MeshBasicMaterial({ color: 0xfff6c8 });
   for (const dx of [-0.7, 0.7]) {
-    const h = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.12, 0.07), headMat);
-    h.position.set(dx, 0.48, -2.72);
+    const h = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.13, 0.07), headMat);
+    h.position.set(dx, 0.46, -2.9);
     g.add(h);
   }
   // dark wheels with light hubs, flared fenders cover their tops
   const wheelMat = new THREE.MeshLambertMaterial({ color: 0x14161a });
-  const hubMat = new THREE.MeshBasicMaterial({ color: 0xc9d2dc });
+  const hubMat = new THREE.MeshBasicMaterial({ color: 0xd4dde6 });
   for (const [dx, dz] of [[-1.0, -1.45], [1.0, -1.45], [-1.0, 1.45], [1.0, 1.45]]) {
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.26, 14), wheelMat);
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.26, 14), wheelMat);
     w.rotation.z = Math.PI / 2;
-    w.position.set(dx, 0.36, dz);
+    w.position.set(dx, 0.38, dz);
     g.add(w);
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.28, 10), hubMat);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.28, 10), hubMat);
     hub.rotation.z = Math.PI / 2;
-    hub.position.set(dx, 0.36, dz);
+    hub.position.set(dx, 0.38, dz);
     g.add(hub);
   }
   return g;
@@ -263,15 +301,23 @@ function makeScooter() {
   return g;
 }
 
-// --- 2D portraits: VERY simple flat cartoon faces (top-2 style) -------------
-// A rounded-square bold background, a plain face, two dot eyes, a small smile.
-function faceSVG(bg, { hair = '#1c1a18', cap = null, bun = false, stache = false } = {}) {
+// --- 2D portraits: simple flat cartoon faces (top-2 style) -------------------
+// A rounded-square bold background, a plain face with a neck + shoulders,
+// two dot eyes with brows, a small smile — each crew member gets a distinct
+// hair style (spiky / bun / cap / mustache / headband / ponytail) like top 2.
+function faceSVG(bg, { hair = '#1c1a18', cap = null, bun = false, stache = false, spiky = false, band = null, pony = false } = {}) {
   return `<svg viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
 <rect x="1" y="1" width="62" height="62" rx="12" fill="${bg}"/>
+<path d="M14 64 L14 56 Q14 48 22 48 L42 48 Q50 48 50 56 L50 64 Z" fill="${bg === '#ffd23e' ? '#c9a227' : '#00000033'}"/>
+<rect x="26" y="46" width="12" height="8" fill="#c98e5e"/>
 <rect x="16" y="18" width="32" height="34" rx="12" fill="#d89a68"/>
 <path d="M16 30 Q16 14 32 14 Q48 14 48 30 L48 26 Q40 18 32 18 Q24 18 16 26 Z" fill="${hair}"/>
+${spiky ? '<path d="M18 20 L22 8 L27 18 L32 6 L37 18 L42 8 L46 20 Z" fill="' + hair + '"/>' : ''}
 ${bun ? '<circle cx="32" cy="12" r="7" fill="' + hair + '"/>' : ''}
+${pony ? '<circle cx="50" cy="26" r="6" fill="' + hair + '"/><path d="M46 22 Q54 26 50 34" stroke="' + hair + '" stroke-width="5" fill="none"/>' : ''}
+${band ? `<rect x="16" y="24" width="32" height="6" rx="3" fill="${band}"/>` : ''}
 ${cap ? `<path d="M14 26 Q14 12 32 12 Q50 12 50 26 L46 24 Q46 16 32 16 Q18 16 18 24 Z" fill="${cap}"/><rect x="12" y="24" width="40" height="5" rx="2.5" fill="${cap}"/>` : ''}
+<rect x="21" y="31" width="7" height="2" rx="1" fill="#1c1a18"/><rect x="36" y="31" width="7" height="2" rx="1" fill="#1c1a18"/>
 <circle cx="25" cy="36" r="2.6" fill="#1a1a1a"/><circle cx="39" cy="36" r="2.6" fill="#1a1a1a"/>
 <circle cx="26" cy="35" r="0.9" fill="#fff"/><circle cx="40" cy="35" r="0.9" fill="#fff"/>
 ${stache ? '<rect x="26" y="43" width="12" height="3" rx="1.5" fill="#1c1a18"/>' : '<path d="M27 44 Q32 48 37 44" stroke="#7a3b1e" stroke-width="2" fill="none" stroke-linecap="round"/>'}
@@ -280,12 +326,12 @@ ${stache ? '<rect x="26" y="43" width="12" height="3" rx="1.5" fill="#1c1a18"/>'
 }
 
 const CREW = [
-  { name: 'SUGENG', tag: 'YOU', bg: '#2fbf4a', price: null, face: {} },
-  { name: 'AGUS', tag: '$200 HIRE [Z]', bg: '#e03131', price: '$200', face: {} },
+  { name: 'SUGENG', tag: 'YOU', bg: '#2fbf4a', price: null, face: { spiky: true } },
+  { name: 'AGUS', tag: '$200 HIRE [Z]', bg: '#e03131', price: '$200', face: { band: '#ffd23e' } },
   { name: 'WANTO', tag: '$500 HIRE [X]', bg: '#2f6fe0', price: '$500', face: { cap: '#1d4fd7' } },
   { name: 'BAMBANG', tag: '$300 HIRE [H]', bg: '#ffd23e', price: '$300', face: { stache: true } },
   { name: 'RATNA', tag: '$300 HIRE [C]', bg: '#17a398', price: '$300', face: { bun: true } },
-  { name: 'SLAMET', tag: '$400 HIRE [V]', bg: '#e86ba8', price: '$400', face: {} },
+  { name: 'SLAMET', tag: '$400 HIRE [V]', bg: '#e86ba8', price: '$400', face: { pony: true } },
 ];
 
 function buildCrewBar() {
@@ -333,45 +379,67 @@ function buildMinimap() {
 }
 
 // --- map screen: top-1 style GRID city map -----------------------------------
-// A dense street grid with coloured district zones, a purple route line and
-// markers — like KARIMBU's map (grid blocks, not six big panels).
+// Like KARIMBU's map: a dense mosaic of SMALL solid-coloured grid squares
+// (each square takes its district's colour, so the districts read as vivid
+// colour blocks), a THICK SOLID purple route line, markers, and a gold rail
+// on the right edge — bright and colourful, not a dark navy field.
 function buildMapGrid() {
   const el = document.getElementById('map-grid');
   if (!el) return;
-  const W = 660, H = 430, BS = 30, GAP = 7;
+  const W = 700, H = 440, BS = 32, GAP = 6, COLS = 18, ROWS = 11;
+  const OX = 10, OY = 10, PITCH = BS + GAP;
+  // district of each grid cell (rectangles in cell space — full mosaic, no gaps)
+  const zones = [
+    { c0: 0, c1: 5, r0: 0, r1: 3, col: '#4a6a8a', n: 'PELABUHAN SEGARA', s: 'Gudang & dermaga' },
+    { c0: 6, c1: 11, r0: 0, r1: 3, col: '#4a7c59', n: 'KAMPUNG BATIK', s: 'Batik & tenun' },
+    { c0: 12, c1: 17, r0: 0, r1: 3, col: '#8a7a4a', n: 'LORONG EMAS', s: 'Toko emas' },
+    { c0: 0, c1: 11, r0: 4, r1: 6, col: '#a85a6a', n: 'ALUN-ALUN', s: 'Pusat kota' },
+    { c0: 0, c1: 11, r0: 7, r1: 10, col: '#3a7a7a', n: 'PANTAI KIDUL', s: 'Pantai & boulevard' },
+    { c0: 12, c1: 17, r0: 4, r1: 10, col: '#8a6a4a', n: 'PASAR SENJA', s: 'Pasar malam', labelRow: 7 },
+  ];
+  const zoneAt = (c, r) => zones.find((z) => c >= z.c0 && c <= z.c1 && r >= z.r0 && r <= z.r1);
+  const shade = (hex, f) => {
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.min(255, Math.round(((n >> 16) & 255) * f));
+    const g = Math.min(255, Math.round(((n >> 8) & 255) * f));
+    const b = Math.min(255, Math.round((n & 255) * f));
+    return `rgb(${r},${g},${b})`;
+  };
   let blocks = '';
-  for (let r = 0; r < 11; r++) {
-    for (let c = 0; c < 17; c++) {
-      const x = 14 + c * (BS + GAP), y = 12 + r * (BS + GAP);
-      const shade = (r + c) % 3 === 0 ? '#1b2a3d' : (r + c) % 3 === 1 ? '#16222f' : '#1e2f42';
-      blocks += `<rect x="${x}" y="${y}" width="${BS}" height="${BS}" rx="3" fill="${shade}"/>`;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = OX + c * PITCH, y = OY + r * PITCH;
+      const z = zoneAt(c, r);
+      // alternate two shades per cell so the mosaic has texture
+      const f = (r + c) % 2 === 0 ? 1.0 : 0.82;
+      blocks += `<rect x="${x}" y="${y}" width="${BS}" height="${BS}" rx="3" fill="${shade(z.col, f)}"/>`;
     }
   }
-  // district zones (translucent colour over the grid)
-  const zones = [
-    { x: 14, y: 12, w: 232, h: 142, c: '#2f6fe0', n: 'PELABUHAN SEGARA', s: 'Gudang & dermaga' },
-    { x: 262, y: 12, w: 196, h: 142, c: '#2fbf4a', n: 'KAMPUNG BATIK', s: 'Batik & tenun' },
-    { x: 474, y: 12, w: 172, h: 142, c: '#f7c948', n: 'LORONG EMAS', s: 'Toko emas' },
-    { x: 14, y: 288, w: 232, h: 130, c: '#17a398', n: 'PANTAI KIDUL', s: 'Pantai & boulevard' },
-    { x: 262, y: 168, w: 196, h: 120, c: '#e86ba8', n: 'ALUN-ALUN', s: 'Pusat kota' },
-    { x: 474, y: 168, w: 172, h: 250, c: '#e86a1a', n: 'PASAR SENJA', s: 'Pasar malam' },
-  ];
-  let zoneSvg = '';
+  // district labels over the mosaic (dark shadow so they read on any colour)
+  // PASAR SENJA's label sits mid-zone (row 7) — the route crosses the top
+  // of that tall zone, so a top label would collide with it.
+  let labels = '';
   for (const z of zones) {
-    zoneSvg += `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="8" fill="${z.c}" opacity="0.34" stroke="${z.c}" stroke-width="2"/>
-<text x="${z.x + 12}" y="${z.y + 26}" font-size="14" font-weight="bold" fill="#fff">${z.n}</text>
-<text x="${z.x + 12}" y="${z.y + 44}" font-size="11" fill="#e8ecf1">${z.s}</text>`;
+    const lx = OX + z.c0 * PITCH + 10;
+    const lr = z.labelRow !== undefined ? z.labelRow : z.r0;
+    const ly = OY + lr * PITCH + 24;
+    labels += `<text x="${lx}" y="${ly}" font-size="14" font-weight="bold" fill="#fff" style="text-shadow:0 1px 4px #000" stroke="#00000088" stroke-width="3" paint-order="stroke">${z.n}</text>
+<text x="${lx}" y="${ly + 17}" font-size="11" fill="#f2f5f8" stroke="#00000088" stroke-width="3" paint-order="stroke">${z.s}</text>`;
   }
-  // purple objective route + markers
-  const route = `<polyline points="60,400 120,330 200,330 260,250 360,250 430,180 560,180 600,90" fill="none" stroke="#a55eea" stroke-width="4" stroke-linejoin="round" stroke-dasharray="10 6"/>
-<circle cx="60" cy="400" r="8" fill="#fff" stroke="#a55eea" stroke-width="3"/>
-<circle cx="600" cy="90" r="9" fill="#f7c948" stroke="#fff" stroke-width="2"/>
-<circle cx="360" cy="250" r="6" fill="#2f6fe0"/><circle cx="200" cy="330" r="6" fill="#e03131"/>
-<circle cx="430" cy="180" r="6" fill="#2fbf4a"/>
-<path d="M60 392 L54 404 L66 404 Z" fill="#fff"/>`;
+  // THICK SOLID purple objective route (white underlay so it pops) + markers
+  const route = `<polyline points="60,410 120,352 200,352 260,272 360,272 430,192 560,192 620,100" fill="none" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+<polyline points="60,410 120,352 200,352 260,272 360,272 430,192 560,192 620,100" fill="none" stroke="#b06ee8" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="60" cy="410" r="9" fill="#fff" stroke="#b06ee8" stroke-width="3"/>
+<circle cx="620" cy="100" r="10" fill="#f7c948" stroke="#fff" stroke-width="2"/>
+<circle cx="360" cy="272" r="7" fill="#2f6fe0" stroke="#fff" stroke-width="1.5"/><circle cx="200" cy="352" r="7" fill="#e03131" stroke="#fff" stroke-width="1.5"/>
+<circle cx="430" cy="192" r="7" fill="#2fbf4a" stroke="#fff" stroke-width="1.5"/>
+<path d="M60 402 L54 414 L66 414 Z" fill="#fff"/>`;
+  // gold rail on the right edge (like top 1's yellow side rail)
+  const rail = `<rect x="${W - 16}" y="0" width="16" height="${H}" fill="#d8a93c"/>`;
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-<rect x="0" y="0" width="${W}" height="${H}" fill="#0e1622"/>${blocks}${zoneSvg}${route}
-<text x="20" y="418" font-size="11" fill="#9aa0a8">WILWATIKTA · GPS AKTIF · skala 1:12.000</text>
+<rect x="0" y="0" width="${W}" height="${H}" fill="#12261a"/>${blocks}${labels}${route}${rail}
+<rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="#1e3a24" stroke-width="6"/>
+<text x="20" y="432" font-size="11" fill="#cfe3d4">WILWATIKTA · GPS AKTIF · skala 1:12.000</text>
 </svg>`;
 }
 
@@ -421,7 +489,7 @@ export function boot() {
   sun.position.set(-40, 80, 30);
   scene.add(sun);
 
-  buildCity(scene);
+  buildCity(scene, { night: shot === 'night' });
   buildCrewBar();
   buildMinimap();
   buildMissionList();
@@ -447,6 +515,7 @@ export function boot() {
   if (shot === 'chase') {
     car.position.set(0.5, 0, 0);
     car.rotation.y = 0.15; // slight 3/4 rear angle so the wedge reads
+    car.scale.setScalar(1.1); // hero car bigger in frame, like top 2's
     heli.position.set(6.0, 7.5, -11); // fully inside the top-right of the frame
     heli.rotation.y = -0.5;
     const scooter = makeScooter();
@@ -465,7 +534,7 @@ export function boot() {
     show('hud', true); show('hud-topright', true); show('crew', true, 'flex');
     show('title-screen', false); show('map-screen', false); show('hit', false);
   } else if (shot === 'title') {
-    car.position.set(0.0, 0, 4.2); // profile view, low-center, clear of the menu buttons
+    car.position.set(0.4, 0, 4.4); // profile view, low-center, nose clear of the menu buttons
     car.rotation.y = Math.PI / 2; // front pointing left
     heli.position.set(4.5, 7.5, -7);
     heli.rotation.y = -0.4;
@@ -479,12 +548,19 @@ export function boot() {
     show('hud', false); show('crew', false); show('title-screen', true);
     show('map-screen', false); show('hit', false); show('hud-topright', true);
   } else if (shot === 'night') {
-    // dusk: dim the day light, warm low sun, blue dusk tint over the canvas
-    hemi.intensity = 0.55;
+    // TRUE NIGHT: dark navy sky + stars + moon (from buildCity night mode),
+    // dark fog, dim cold light, a faint warm street glow — the dusk overlay
+    // is thinned so the lit windows and lamp pools stay bright.
+    hemi.intensity = 0.45;
+    hemi.color.setHex(0x8fa8cc);
     sun.color.setHex(0xff9a3d);
-    sun.intensity = 0.85;
+    sun.intensity = 0.6;
     sun.position.set(-50, 22, 20);
+    scene.fog.color.setHex(0x0a1626);
+    const duskEl = document.getElementById('dusk');
+    if (duskEl) duskEl.style.background = 'rgba(10,16,40,0.16)';
     show('dusk', true);
+    setText('clock', 'DAY 1 · 23:40 · 1998');
     const sugeng = makeSugeng();
     sugeng.position.set(-2.2, 0, 2.5); // left of the dialog bar, fully visible
     sugeng.rotation.y = Math.PI; // back to camera
