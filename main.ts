@@ -2,14 +2,13 @@
 // Copies game/ and screenshots/ into /output, then writes the dossier the
 // scorer reproduces byte for byte. Node 22 runs this file as-is, no build.
 import { buildDossier } from './vendor/makefun-game.ts';
-import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const out = '/output';
 
-rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'game'), { recursive: true });
 mkdirSync(join(out, 'screenshots'), { recursive: true });
 cpSync(join(root, 'game'), join(out, 'game'), { recursive: true });
